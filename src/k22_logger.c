@@ -132,7 +132,7 @@ VOID K22LogWrite(
 			0,
 			NULL
 		);
-		{
+		if (lpMessage) {
 			// strip newlines and whitespace
 			LPSTR lpMessagePtr = lpMessage;
 			while (*(++lpMessagePtr)) {

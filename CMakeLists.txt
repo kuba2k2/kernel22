@@ -23,7 +23,7 @@ target_link_options(
 
 add_library(module SHARED ${SRCS_MODULE})
 target_include_directories(
-	loader PUBLIC
+	module PUBLIC
 	"src/"
 	"src/module/"
 )

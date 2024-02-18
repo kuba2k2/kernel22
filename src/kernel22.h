@@ -20,6 +20,7 @@
 
 #if K22_LOADER
 #include "k22_debugger.h"
+#include "k22_patch.h"
 #include "k22_process.h"
 #endif
 

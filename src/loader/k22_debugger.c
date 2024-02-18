@@ -2,21 +2,24 @@
 
 #include "k22_debugger.h"
 
-static BOOL K22DebugEventException(LPDEBUG_INFO lpInfo, LPEXCEPTION_DEBUG_INFO lpEvent);		  // 1
-static BOOL K22DebugEventCreateThread(LPDEBUG_INFO lpInfo, LPCREATE_THREAD_DEBUG_INFO lpEvent);	  // 2
-static BOOL K22DebugEventCreateProcess(LPDEBUG_INFO lpInfo, LPCREATE_PROCESS_DEBUG_INFO lpEvent); // 3
-static BOOL K22DebugEventExitThread(LPDEBUG_INFO lpInfo, LPEXIT_THREAD_DEBUG_INFO lpEvent);		  // 4
-static BOOL K22DebugEventExitProcess(LPDEBUG_INFO lpInfo, LPEXIT_PROCESS_DEBUG_INFO lpEvent);	  // 5
-static BOOL K22DebugEventLoadDll(LPDEBUG_INFO lpInfo, LPLOAD_DLL_DEBUG_INFO lpEvent);			  // 6
-static BOOL K22DebugEventUnloadDll(LPDEBUG_INFO lpInfo, LPUNLOAD_DLL_DEBUG_INFO lpEvent);		  // 7
-static BOOL K22DebugEventOutputString(LPDEBUG_INFO lpInfo, LPOUTPUT_DEBUG_STRING_INFO lpEvent);	  // 8
-static BOOL K22DebugEventRipInfo(LPDEBUG_INFO lpInfo, LPRIP_INFO lpEvent);						  // 9
+static BOOL K22DebugEventException(LPDEBUG_INFO lpInfo, LPEXCEPTION_DEBUG_INFO lpEvent);						  // 1
+static BOOL K22DebugEventCreateThread(LPDEBUG_INFO lpInfo, DWORD dwThreadId, LPCREATE_THREAD_DEBUG_INFO lpEvent); // 2
+static BOOL K22DebugEventCreateProcess(LPDEBUG_INFO lpInfo, LPCREATE_PROCESS_DEBUG_INFO lpEvent);				  // 3
+static BOOL K22DebugEventExitThread(LPDEBUG_INFO lpInfo, DWORD dwThreadId, LPEXIT_THREAD_DEBUG_INFO lpEvent);	  // 4
+static BOOL K22DebugEventExitProcess(LPDEBUG_INFO lpInfo, LPEXIT_PROCESS_DEBUG_INFO lpEvent);					  // 5
+static BOOL K22DebugEventLoadDll(LPDEBUG_INFO lpInfo, LPLOAD_DLL_DEBUG_INFO lpEvent);							  // 6
+static BOOL K22DebugEventUnloadDll(LPDEBUG_INFO lpInfo, LPUNLOAD_DLL_DEBUG_INFO lpEvent);						  // 7
+static BOOL K22DebugEventOutputString(LPDEBUG_INFO lpInfo, LPOUTPUT_DEBUG_STRING_INFO lpEvent);					  // 8
+static BOOL K22DebugEventRipInfo(LPDEBUG_INFO lpInfo, LPRIP_INFO lpEvent);										  // 9
 
 BOOL K22DebugProcess(HANDLE hProcess, HANDLE hThread) {
 	DEBUG_INFO stInfo = {
 		.hProcess = hProcess,
 		.hThread  = hThread,
 	};
+
+	// kill the target process when something goes wrong (and the debugger returns)
+	DebugSetProcessKillOnExit(TRUE);
 
 	// read process basic information
 	NtQueryInformationProcess(
@@ -29,27 +32,22 @@ BOOL K22DebugProcess(HANDLE hProcess, HANDLE hThread) {
 	// read PEB of the debugged process
 	if (!K22ReadProcessMemory(hProcess, stInfo.stProcessBasicInformation.PebBaseAddress, 0, stInfo.stPeb))
 		RETURN_K22_F_ERR("Couldn't read PEB");
-	//	if (!K22ReadProcessMemory(lpInfo->hProcess, lpInfo->stPeb.Ldr, 0, lpInfo->stPebLdr))
-	//		RETURN_K22_F_ERR("Couldn't read process memory (Peb->Ldr)");
 	// extract base memory address
 	stInfo.lpBase = stInfo.stPeb.Reserved3[1];
 	K22_D("Process image base address: %p", stInfo.lpBase);
-	// read PE headers
-	if (!K22ReadProcessMemory(hProcess, stInfo.lpBase, 0, stInfo.stDosHeader))
-		RETURN_K22_F_ERR("Couldn't read DOS header");
-	if (!K22ReadProcessMemory(hProcess, stInfo.lpBase, stInfo.stDosHeader.e_lfanew, stInfo.stNt64))
-		RETURN_K22_F_ERR("Couldn't read NT headers");
 
 	// resume the main thread when we're ready
-	K22_I("Debugging main thread, resuming at %p", stInfo.stNt64.OptionalHeader.AddressOfEntryPoint);
+	K22_I("Resuming main thread");
 	ResumeThread(hThread);
 
-	// DebugSetProcessKillOnExit(FALSE);
 	// DebugActiveProcessStop(stProcessInformation.dwProcessId);
 
-	BOOL fRunning = TRUE;
-	while (fRunning) {
-		// receive debug events as long as the target process is running (for now)
+	BOOL fDebugging = TRUE;
+	BOOL fLoaded	= FALSE;
+
+	// receive debug events as long as we need them
+	// when something fails - return, while also killing the target process
+	while (fDebugging) {
 		DEBUG_EVENT stEvent;
 		if (!WaitForDebugEvent(&stEvent, INFINITE)) {
 			K22_E_ERR("Couldn't receive debug event");
@@ -59,19 +57,36 @@ BOOL K22DebugProcess(HANDLE hProcess, HANDLE hThread) {
 		switch (stEvent.dwDebugEventCode) {
 			case EXCEPTION_DEBUG_EVENT: /* 1 */
 				K22DebugEventException(&stInfo, &stEvent.u.Exception);
+				// the first breakpoint indicates finished DLL loading
+				if (!fLoaded && stEvent.u.Exception.ExceptionRecord.ExceptionCode == STATUS_BREAKPOINT) {
+					// patch post-init routine in PEB to load K22 module DLL
+					K22_I("Process loaded, patching post-init routine");
+					if (!K22PatchRemotePostInit(
+							hProcess,
+							stInfo.stProcessBasicInformation.PebBaseAddress,
+							"module.dll"
+						))
+						return FALSE;
+					// ignore any subsequent breakpoints here
+					fLoaded = TRUE;
+				}
 				break;
 			case CREATE_THREAD_DEBUG_EVENT: /* 2 */
-				K22DebugEventCreateThread(&stInfo, &stEvent.u.CreateThread);
+				K22DebugEventCreateThread(&stInfo, stEvent.dwThreadId, &stEvent.u.CreateThread);
 				break;
 			case CREATE_PROCESS_DEBUG_EVENT: /* 3 */
 				K22DebugEventCreateProcess(&stInfo, &stEvent.u.CreateProcessInfo);
+				// when the process is created successfully, clear its import table
+				K22_I("Process created, terminating import table");
+				if (!K22PatchRemoteImportTable(hProcess, stInfo.lpBase))
+					return FALSE;
 				break;
 			case EXIT_THREAD_DEBUG_EVENT: /* 4 */
-				K22DebugEventExitThread(&stInfo, &stEvent.u.ExitThread);
+				K22DebugEventExitThread(&stInfo, stEvent.dwThreadId, &stEvent.u.ExitThread);
 				break;
 			case EXIT_PROCESS_DEBUG_EVENT: /* 5 */
 				K22DebugEventExitProcess(&stInfo, &stEvent.u.ExitProcess);
-				fRunning = FALSE;
+				fDebugging = FALSE;
 				break;
 			case LOAD_DLL_DEBUG_EVENT: /* 6 */
 				K22DebugEventLoadDll(&stInfo, &stEvent.u.LoadDll);
@@ -105,9 +120,10 @@ static BOOL K22DebugEventException(LPDEBUG_INFO lpInfo, LPEXCEPTION_DEBUG_INFO l
 	return TRUE;
 }
 
-static BOOL K22DebugEventCreateThread(LPDEBUG_INFO lpInfo, LPCREATE_THREAD_DEBUG_INFO lpEvent) {
+static BOOL K22DebugEventCreateThread(LPDEBUG_INFO lpInfo, DWORD dwThreadId, LPCREATE_THREAD_DEBUG_INFO lpEvent) {
 	K22_D(
-		"Debugger: CREATE_THREAD_DEBUG_EVENT(lpThreadLocalBase=%p, lpStartAddress=%p)",
+		"Debugger: CREATE_THREAD_DEBUG_EVENT(dwThreadId=%d, lpThreadLocalBase=%p, lpStartAddress=%p)",
+		dwThreadId,
 		lpEvent->lpThreadLocalBase,
 		lpEvent->lpStartAddress
 	);
@@ -124,8 +140,8 @@ static BOOL K22DebugEventCreateProcess(LPDEBUG_INFO lpInfo, LPCREATE_PROCESS_DEB
 	return TRUE;
 }
 
-static BOOL K22DebugEventExitThread(LPDEBUG_INFO lpInfo, LPEXIT_THREAD_DEBUG_INFO lpEvent) {
-	K22_D("Debugger: EXIT_THREAD_DEBUG_EVENT(dwExitCode=0x%lx)", lpEvent->dwExitCode);
+static BOOL K22DebugEventExitThread(LPDEBUG_INFO lpInfo, DWORD dwThreadId, LPEXIT_THREAD_DEBUG_INFO lpEvent) {
+	K22_D("Debugger: EXIT_THREAD_DEBUG_EVENT(dwThreadId=%d, dwExitCode=0x%lx)", dwThreadId, lpEvent->dwExitCode);
 	return TRUE;
 }
 
