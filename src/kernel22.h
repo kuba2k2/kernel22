@@ -15,6 +15,7 @@
 #include <winternl.h>
 
 #include "k22_config.h"
+#include "k22_extern.h"
 #include "k22_logger.h"
 #include "k22_utils.h"
 

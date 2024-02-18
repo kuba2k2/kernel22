@@ -2,11 +2,6 @@
 
 #include "k22_patch.h"
 
-typedef union {
-	IMAGE_NT_HEADERS32 stNt32;
-	IMAGE_NT_HEADERS64 stNt64;
-} IMAGE_NT_HEADERS3264;
-
 BOOL K22PatchProcessVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor) {
 	HANDLE hKernel32	   = GetModuleHandle("kernel32.dll");
 	HANDLE hCurrentProcess = GetCurrentProcess();

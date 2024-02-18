@@ -69,6 +69,10 @@ BOOL K22DebugProcess(HANDLE hProcess, HANDLE hThread) {
 						return FALSE;
 					// ignore any subsequent breakpoints here
 					fLoaded = TRUE;
+					// even better, quit debugging altogether
+					DebugActiveProcessStop(stEvent.dwProcessId);
+					DebugSetProcessKillOnExit(FALSE);
+					fDebugging = FALSE;
 				}
 				break;
 			case CREATE_THREAD_DEBUG_EVENT: /* 2 */
