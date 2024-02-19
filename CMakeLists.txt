@@ -9,13 +9,13 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB SRCS_CORE "src/*.c" "src/core/*.c")
-file(GLOB SRCS_LOADER "src/*.c" "src/loader/*.c")
+file(GLOB SRCS_CORE "src/common/*.c" "src/core/*.c")
+file(GLOB SRCS_LOADER "src/common/*.c" "src/loader/*.c")
 file(GLOB SRCS_EXAMPLE "example/*.c")
 
 add_link_options(/INCREMENTAL:NO)
 link_libraries(ntdll kernel32 version)
-include_directories("src/")
+include_directories("src/" "src/common/")
 
 add_library(core SHARED ${SRCS_CORE})
 target_include_directories(core PUBLIC "src/core/")
