@@ -49,10 +49,8 @@ BOOL K22DebugProcess(HANDLE hProcess, HANDLE hThread) {
 				if (!fLoaded && stEvent.u.Exception.ExceptionRecord.ExceptionCode == STATUS_BREAKPOINT) {
 					// ignore any subsequent breakpoints here
 					fLoaded = TRUE;
-					// even better, quit debugging altogether
-					DebugActiveProcessStop(stEvent.dwProcessId);
+					// don't kill the target if the debugger decides to quit
 					DebugSetProcessKillOnExit(FALSE);
-					fDebugging = FALSE;
 				}
 				break;
 			case CREATE_THREAD_DEBUG_EVENT: /* 2 */

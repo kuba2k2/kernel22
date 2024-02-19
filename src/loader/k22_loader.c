@@ -52,7 +52,7 @@ LPCSTR K22SkipCommandLinePart(LPCSTR lpCommandLine, LPDWORD lpPartLength) {
 	return lpCommandLine;
 }
 
-BOOL K22CreateDebugProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPROCESS_INFORMATION lpProcessInformation) {
+BOOL K22CreateProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPROCESS_INFORMATION lpProcessInformation) {
 	BOOL fResult = TRUE;
 
 	STARTUPINFOEX stStartupInfoEx;
@@ -99,9 +99,6 @@ BOOL K22CreateDebugProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPRO
 		}
 	}
 
-	K22_D("Application path: '%s'", lpApplicationPath);
-	K22_D("Command line: '%s'", lpCommandLine);
-
 	// create the process in suspended state
 	ZeroMemory(lpProcessInformation, sizeof(*lpProcessInformation));
 	if (CreateProcess(
@@ -110,7 +107,11 @@ BOOL K22CreateDebugProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPRO
 			NULL,
 			NULL,
 			TRUE,
+#if K22_LOADER_DEBUGGER
 			CREATE_SUSPENDED | DEBUG_ONLY_THIS_PROCESS | EXTENDED_STARTUPINFO_PRESENT,
+#else
+			CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT,
+#endif
 			NULL,
 			NULL,
 			&stStartupInfoEx.StartupInfo,
@@ -120,6 +121,11 @@ BOOL K22CreateDebugProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPRO
 		fResult = FALSE;
 		goto end;
 	}
+
+#if K22_LOADER_DEBUGGER
+	// kill the target process when something goes wrong (and the debugger exits prematurely)
+	DebugSetProcessKillOnExit(TRUE);
+#endif
 
 end:
 	DeleteProcThreadAttributeList(stStartupInfoEx.lpAttributeList);

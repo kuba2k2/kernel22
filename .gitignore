@@ -188,9 +188,9 @@ _deps
 *.til
 
 # IDA Pro 64 packaged data
-# *.i64
+*.i64
 # IDA Pro 32 packaged data
-# *.idb
+*.idb
 
 ### Intellij+iml ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider

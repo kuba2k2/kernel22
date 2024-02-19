@@ -33,3 +33,8 @@
 #ifndef K22_LOGLEVEL
 #define K22_LOGLEVEL K22_LEVEL_DEBUG
 #endif
+
+// Loader configuration
+#ifndef K22_LOADER_DEBUGGER
+#define K22_LOADER_DEBUGGER 0
+#endif
