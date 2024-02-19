@@ -6,7 +6,7 @@ BOOL LoaderMain() {
 	LPCSTR lpCommandLine	 = K22SkipCommandLinePart(GetCommandLine(), NULL);
 	LPCSTR lpApplicationPath = K22GetApplicationPath(lpCommandLine);
 
-	if (!K22PatchProcessVersionCheck(11, 0))
+	if (!K22CorePatchVersionCheck(11, 0))
 		return FALSE;
 
 	PROCESS_INFORMATION stProcessInformation;
@@ -19,7 +19,10 @@ BOOL LoaderMain() {
 		return FALSE;
 
 	DWORD dwReturnCode = WaitForSingleObject(stProcessInformation.hProcess, 1000);
-	K22_I("Process ended with return code %lu", dwReturnCode);
+	if (dwReturnCode != WAIT_TIMEOUT)
+		K22_I("Process ended with return code %lu", dwReturnCode);
+	else
+		K22_I("Process detached");
 
 	CloseHandle(stProcessInformation.hProcess);
 	CloseHandle(stProcessInformation.hThread);

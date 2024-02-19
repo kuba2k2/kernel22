@@ -14,17 +14,20 @@
 #include <strsafe.h>
 #include <winternl.h>
 
+#include "k22_common.h"
 #include "k22_config.h"
 #include "k22_extern.h"
 #include "k22_logger.h"
-#include "k22_utils.h"
+
+#if K22_CORE
+#define K22_CORE_PROC __declspec(dllexport)
+#elif K22_LOADER
+#define K22_CORE_PROC __declspec(dllimport)
+#endif
+
+#include "k22_core.h"
 
 #if K22_LOADER
 #include "k22_debugger.h"
-#include "k22_patch.h"
-#include "k22_process.h"
-#endif
-
-#if K22_MODULE
-
+#include "k22_loader.h"
 #endif

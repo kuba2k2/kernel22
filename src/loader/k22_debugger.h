@@ -7,8 +7,6 @@
 typedef struct {
 	HANDLE hProcess;
 	HANDLE hThread;
-	PROCESS_BASIC_INFORMATION stProcessBasicInformation;
-	PEB stPeb;
 	LPVOID lpBase;
 	DWORD dwModuleLoadThreadId;
 } DEBUG_INFO, *PDEBUG_INFO, *LPDEBUG_INFO;

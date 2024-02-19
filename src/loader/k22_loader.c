@@ -1,6 +1,56 @@
 // Copyright (c) Kuba Szczodrzyński 2024-2-16.
 
-#include "k22_process.h"
+#include "k22_loader.h"
+
+LPCSTR K22GetApplicationPath(LPCSTR lpCommandLine) {
+	DWORD cbApplicationName = 0;
+	K22SkipCommandLinePart(lpCommandLine, &cbApplicationName);
+
+	LPSTR lpApplicationName = LocalAlloc(0, cbApplicationName + 1);
+	CopyMemory(lpApplicationName, lpCommandLine, cbApplicationName);
+	lpApplicationName[cbApplicationName] = '\0';
+
+	TCHAR szApplicationPath[MAX_PATH] = {0};
+	SearchPath(NULL, lpApplicationName, ".exe", sizeof(szApplicationPath), szApplicationPath, NULL);
+
+	LPSTR lpApplicationPath = lpApplicationName;
+	if (szApplicationPath[0]) {
+		lpApplicationPath = szApplicationPath;
+	} else {
+		if (lpApplicationPath[cbApplicationName - 1] == '"')
+			lpApplicationPath[cbApplicationName - 1] = '\0';
+		if (lpApplicationPath[0] == '"')
+			lpApplicationPath++;
+	}
+
+	LPCSTR lpResult = _strdup(lpApplicationPath);
+	LocalFree(lpApplicationName);
+	return lpResult;
+}
+
+LPCSTR K22SkipCommandLinePart(LPCSTR lpCommandLine, LPDWORD lpPartLength) {
+	if (*lpCommandLine == '"') {
+		TCHAR c;
+		while ((c = *(++lpCommandLine)) && c != '"') {
+			if (lpPartLength)
+				(*lpPartLength)++;
+		}
+		// skip closing quotes
+		lpCommandLine++;
+		if (lpPartLength) {
+			(*lpPartLength) += 2; // count opening and closing quotes
+		}
+	} else {
+		TCHAR c;
+		while ((c = *(lpCommandLine++)) && c != ' ' && c != '\t') {
+			if (lpPartLength)
+				(*lpPartLength)++;
+		}
+	}
+	while (*lpCommandLine == ' ' || *lpCommandLine == '\t')
+		lpCommandLine++;
+	return lpCommandLine;
+}
 
 BOOL K22CreateDebugProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPROCESS_INFORMATION lpProcessInformation) {
 	BOOL fResult = TRUE;

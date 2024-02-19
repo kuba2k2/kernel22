@@ -21,20 +21,8 @@ BOOL K22DebugProcess(HANDLE hProcess, HANDLE hThread) {
 	// kill the target process when something goes wrong (and the debugger returns)
 	DebugSetProcessKillOnExit(TRUE);
 
-	// read process basic information
-	NtQueryInformationProcess(
-		hProcess,
-		ProcessBasicInformation,
-		&stInfo.stProcessBasicInformation,
-		sizeof(stInfo.stProcessBasicInformation),
-		NULL
-	);
-	// read PEB of the debugged process
-	if (!K22ReadProcessMemory(hProcess, stInfo.stProcessBasicInformation.PebBaseAddress, 0, stInfo.stPeb))
-		RETURN_K22_F_ERR("Couldn't read PEB");
-	// extract base memory address
-	stInfo.lpBase = stInfo.stPeb.Reserved3[1];
-	K22_D("Process image base address: %p", stInfo.lpBase);
+	if (!K22CoreAttachToProcess(hProcess))
+		return FALSE;
 
 	// resume the main thread when we're ready
 	K22_I("Resuming main thread");
@@ -59,14 +47,6 @@ BOOL K22DebugProcess(HANDLE hProcess, HANDLE hThread) {
 				K22DebugEventException(&stInfo, &stEvent.u.Exception);
 				// the first breakpoint indicates finished DLL loading
 				if (!fLoaded && stEvent.u.Exception.ExceptionRecord.ExceptionCode == STATUS_BREAKPOINT) {
-					// patch post-init routine in PEB to load K22 module DLL
-					K22_I("Process loaded, patching post-init routine");
-					if (!K22PatchRemotePostInit(
-							hProcess,
-							stInfo.stProcessBasicInformation.PebBaseAddress,
-							"module.dll"
-						))
-						return FALSE;
 					// ignore any subsequent breakpoints here
 					fLoaded = TRUE;
 					// even better, quit debugging altogether
@@ -80,10 +60,6 @@ BOOL K22DebugProcess(HANDLE hProcess, HANDLE hThread) {
 				break;
 			case CREATE_PROCESS_DEBUG_EVENT: /* 3 */
 				K22DebugEventCreateProcess(&stInfo, &stEvent.u.CreateProcessInfo);
-				// when the process is created successfully, clear its import table
-				K22_I("Process created, terminating import table");
-				if (!K22PatchRemoteImportTable(hProcess, stInfo.lpBase))
-					return FALSE;
 				break;
 			case EXIT_THREAD_DEBUG_EVENT: /* 4 */
 				K22DebugEventExitThread(&stInfo, stEvent.dwThreadId, &stEvent.u.ExitThread);

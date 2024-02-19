@@ -4,7 +4,7 @@
 
 #include "kernel22.h"
 
-BOOL K22CreateDebugProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPROCESS_INFORMATION lpProcessInformation);
+#define K22_LOADER_COOKIE "K22_"
 
 #define K22ReadProcessMemory(hProcess, lpBaseAddress, ullOffset, vOut)                                                 \
 	ReadProcessMemory(hProcess, (LPCVOID)((ULONGLONG)lpBaseAddress + ullOffset), &vOut, sizeof(vOut), NULL)
