@@ -45,7 +45,7 @@ static BOOL K22PostInitLoadLibrary(HANDLE hProcess, LPVOID lpPebBase, LPSTR lpLi
 		"\x48\x8d\x0d\x02\x00\x00\x00"
 		// 0011: jmp rax
 		"\xff\xe0"
-		// 0013: module db "module.dll", 0
+		// 0013: .string "module.dll"
 		// "module.dll\x00";
 		"";
 

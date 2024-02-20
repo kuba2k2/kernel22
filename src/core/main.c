@@ -2,14 +2,13 @@
 
 #include "k22_core.h"
 
-static BOOL DllInitialize(DWORD dwReason) {
-	// ignore any other events
-	if (dwReason != DLL_PROCESS_ATTACH)
+static BOOL DllInitialize(HANDLE hDll) {
+	// ignore processes not patched by K22 Core
+	PK22_HDR_DATA pK22HdrData = K22_DOS_HDR_DATA(GetModuleHandle(NULL));
+	if (memcmp(pK22HdrData->abPatcherCookie, K22_PATCHER_COOKIE, 3) != 0)
 		return TRUE;
-	// ignore processes not started by the loader (or by a patched process)
-	PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)GetModuleHandle(NULL);
-	if (memcmp(&pDosHeader->e_res, K22_LOADER_COOKIE, 4) != 0)
-		return TRUE;
+
+	K22_I("Import Directory @ RVA %p", pK22HdrData->dwRvaImportDirectory);
 
 	TCHAR szFilename[MAX_PATH + 1];
 	GetModuleFileNameA(NULL, szFilename, sizeof(szFilename));
@@ -31,7 +30,10 @@ static VOID DllError() {
 #pragma ide diagnostic ignored "ConstantConditionsOC"
 
 BOOL APIENTRY DllMain(HANDLE hDll, DWORD dwReason, LPVOID lpReserved) {
-	if (!DllInitialize(dwReason)) {
+	// ignore any other events
+	if (dwReason != DLL_PROCESS_ATTACH)
+		return TRUE;
+	if (!DllInitialize(hDll)) {
 		DllError();
 		return FALSE;
 	}

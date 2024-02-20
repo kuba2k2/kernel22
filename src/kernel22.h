@@ -17,6 +17,7 @@
 #include "k22_common.h"
 #include "k22_config.h"
 #include "k22_extern.h"
+#include "k22_hexdump.h"
 #include "k22_logger.h"
 
 #if K22_CORE

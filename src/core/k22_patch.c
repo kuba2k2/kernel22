@@ -70,55 +70,37 @@ BOOL K22PatchRemoteImportTable(HANDLE hProcess, LPVOID lpImageBase) {
 	IMAGE_DOS_HEADER stDosHeader;
 	if (!K22ReadProcessMemory(hProcess, lpImageBase, 0, stDosHeader))
 		RETURN_K22_F_ERR("Couldn't read DOS header");
-	// read NT headers
+	// read NT header
 	IMAGE_NT_HEADERS3264 stNt;
-	if (!K22ReadProcessMemory(hProcess, lpImageBase, stDosHeader.e_lfanew, stNt.stNt64))
-		RETURN_K22_F_ERR("Couldn't read NT headers");
+	if (!K22ReadProcessMemory(hProcess, lpImageBase, stDosHeader.e_lfanew, stNt))
+		RETURN_K22_F_ERR("Couldn't read NT header");
 
+	// get a handle to K22 data in DOS header
+	PK22_HDR_DATA pK22HdrData = K22_DOS_HDR_DATA(&stDosHeader);
 	// fetch import directory entry
 	BOOL fIs64Bit				 = stNt.stNt64.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC;
-	IMAGE_DATA_DIRECTORY stEntry = fIs64Bit ? stNt.stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT]
-											: stNt.stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+	PIMAGE_DATA_DIRECTORY pEntry = fIs64Bit ? &stNt.stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT]
+											: &stNt.stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
 
-	// go through the import directory
-	IMAGE_IMPORT_DESCRIPTOR stDesc;
-	for (DWORD dwRvaDesc = stEntry.VirtualAddress; /**/; dwRvaDesc += sizeof(stDesc)) {
-		if (!K22ReadProcessMemory(hProcess, lpImageBase, dwRvaDesc, stDesc))
-			RETURN_K22_F_ERR("Couldn't read import descriptor @ RVA 0x%x", dwRvaDesc);
-		if (stDesc.Characteristics == 0)
-			break;
-
-		TCHAR szModuleName[MAX_PATH];
-		if (!K22ReadProcessMemoryArray(hProcess, lpImageBase, stDesc.Name, szModuleName))
-			RETURN_K22_F_ERR("Couldn't read module name");
-
-		K22_V(
-			"Import descriptor @ 0x%x FT=0x%x, OFT=0x%x, Name=0x%x(%s)",
-			dwRvaDesc,
-			stDesc.FirstThunk,
-			stDesc.OriginalFirstThunk,
-			stDesc.Name,
-			szModuleName
-		);
-
-		if (dwRvaDesc == stEntry.VirtualAddress) {
-			K22_D("Terminating import table @ RVA 0x%ld", dwRvaDesc);
-			stDesc.Characteristics = 0;
-			stDesc.FirstThunk	   = 0;
-			if (!K22UnlockProcessMemory(hProcess, lpImageBase, dwRvaDesc, sizeof(stDesc), &dwOldProtect))
-				RETURN_K22_F_ERR("Couldn't unlock memory @ RVA 0x%x", dwRvaDesc);
-			if (!K22WriteProcessMemory(hProcess, lpImageBase, dwRvaDesc, stDesc))
-				RETURN_K22_F_ERR("Couldn't write import descriptor @ RVA 0x%x", dwRvaDesc);
-		}
-	}
+	// disable the import directory
+	K22_D("Import Directory @ RVA %p", pEntry->VirtualAddress);
+	pK22HdrData->dwRvaImportDirectory = pEntry->VirtualAddress;
+	pEntry->VirtualAddress			  = 0;
 
 	// leave a trace for K22 Core DLL
-	CopyMemory(&stDosHeader.e_res, K22_LOADER_COOKIE, 4);
+	CopyMemory(pK22HdrData->abPatcherCookie, K22_PATCHER_COOKIE, 3);
+	pK22HdrData->bPatcherType = K22_PATCHER_MEMORY;
+
 	// write modified DOS header
 	if (!K22UnlockProcessMemory(hProcess, lpImageBase, 0, sizeof(stDosHeader), &dwOldProtect))
 		RETURN_K22_F_ERR("Couldn't unlock DOS header");
 	if (!K22WriteProcessMemory(hProcess, lpImageBase, 0, stDosHeader))
-		RETURN_K22_F_ERR("Couldn't read DOS header");
+		RETURN_K22_F_ERR("Couldn't write DOS header");
+	// write modified NT header
+	if (!K22UnlockProcessMemory(hProcess, lpImageBase, stDosHeader.e_lfanew, sizeof(stNt), &dwOldProtect))
+		RETURN_K22_F_ERR("Couldn't unlock NT header");
+	if (!K22WriteProcessMemory(hProcess, lpImageBase, stDosHeader.e_lfanew, stNt))
+		RETURN_K22_F_ERR("Couldn't write NT header");
 
 	return TRUE;
 }

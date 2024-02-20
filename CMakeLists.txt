@@ -30,6 +30,7 @@ target_compile_definitions(loader PRIVATE K22_LOADER=1)
 set_target_properties(loader PROPERTIES OUTPUT_NAME "K22Loader${K22_BITS}")
 
 add_executable(example ${SRCS_EXAMPLE})
+set_target_properties(example PROPERTIES OUTPUT_NAME "Example${K22_BITS}")
 
 set_target_properties(
 	core loader PROPERTIES
