@@ -44,3 +44,25 @@ typedef struct {
 
 #define K22UnlockProcessMemory(hProcess, lpBaseAddress, ullOffset, cbLength, lpOldProtect)                             \
 	VirtualProtectEx(hProcess, (LPVOID)((ULONGLONG)lpBaseAddress + ullOffset), cbLength, PAGE_READWRITE, lpOldProtect)
+
+// File macros
+
+#define K22ReadFile(hFile, lOffset, vOut, pBytesRead)                                                                  \
+	(SetFilePointer(hFile, lOffset, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER &&                                   \
+	 ReadFile(hFile, &vOut, sizeof(vOut), pBytesRead, NULL))
+#define K22ReadFileLength(hFile, lOffset, pvOut, cbLength, pBytesRead)                                                 \
+	(SetFilePointer(hFile, lOffset, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER &&                                   \
+	 ReadFile(hFile, pvOut, cbLength, pBytesRead, NULL))
+#define K22ReadFileArray(hFile, lOffset, pvOut, pBytesRead)                                                            \
+	(SetFilePointer(hFile, lOffset, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER &&                                   \
+	 ReadFile(hFile, pvOut, sizeof(pvOut), pBytesRead, NULL))
+
+#define K22WriteFile(hProcess, lOffset, vIn, pBytesWritten)                                                            \
+	(SetFilePointer(hFile, lOffset, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER &&                                   \
+	 WriteFile(hFile, &vIn, sizeof(vIn), pBytesWritten, NULL))
+#define K22WriteFileLength(hProcess, lOffset, pvIn, cbLength, pBytesWritten)                                           \
+	(SetFilePointer(hFile, lOffset, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER &&                                   \
+	 WriteFile(hFile, pvIn, cbLength, pBytesWritten, NULL))
+#define K22WriteFileArray(hProcess, lOffset, pvIn, pBytesWritten)                                                      \
+	(SetFilePointer(hFile, lOffset, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER &&                                   \
+	 WriteFile(hFile, pvIn, sizeof(pvIn), pBytesWritten, NULL))

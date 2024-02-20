@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB SRCS_CORE "src/common/*.c" "src/core/*.c")
 file(GLOB SRCS_LOADER "src/common/*.c" "src/loader/*.c")
+file(GLOB SRCS_PATCHER "src/common/*.c" "src/patcher/*.c")
 file(GLOB SRCS_EXAMPLE "example/*.c")
 
 add_link_options(/INCREMENTAL:NO)
@@ -28,6 +29,12 @@ target_link_libraries(loader PRIVATE core)
 target_include_directories(loader PRIVATE "src/loader/")
 target_compile_definitions(loader PRIVATE K22_LOADER=1)
 set_target_properties(loader PROPERTIES OUTPUT_NAME "K22Loader${K22_BITS}")
+
+add_executable(patcher ${SRCS_PATCHER})
+target_link_libraries(patcher PRIVATE core)
+target_include_directories(patcher PRIVATE "src/patcher/")
+target_compile_definitions(patcher PRIVATE K22_PATCHER=1)
+set_target_properties(patcher PROPERTIES OUTPUT_NAME "K22Patcher${K22_BITS}")
 
 add_executable(example ${SRCS_EXAMPLE})
 set_target_properties(example PROPERTIES OUTPUT_NAME "Example${K22_BITS}")

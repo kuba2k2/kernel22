@@ -5,6 +5,11 @@
 #include "kernel22.h"
 
 typedef union {
+	struct {
+		DWORD dwSignature;
+		IMAGE_FILE_HEADER stFile;
+	};
+
 	IMAGE_NT_HEADERS32 stNt32;
 	IMAGE_NT_HEADERS64 stNt64;
 } IMAGE_NT_HEADERS3264, *PIMAGE_NT_HEADERS3264;
