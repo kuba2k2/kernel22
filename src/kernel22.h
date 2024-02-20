@@ -22,7 +22,7 @@
 
 #if K22_CORE
 #define K22_CORE_PROC __declspec(dllexport)
-#elif K22_LOADER
+#else
 #define K22_CORE_PROC __declspec(dllimport)
 #endif
 

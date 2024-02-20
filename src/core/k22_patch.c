@@ -63,6 +63,26 @@ BOOL K22CorePatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor) {
 	return TRUE;
 }
 
+BOOL K22PatchImportTable(PIMAGE_DOS_HEADER pDosHeader, PIMAGE_NT_HEADERS3264 pNt, BYTE bPatcherType) {
+	// get a handle to K22 data in DOS header
+	PK22_HDR_DATA pK22HdrData = K22_DOS_HDR_DATA(pDosHeader);
+	// fetch import directory entry
+	BOOL fIs64Bit				 = pNt->stNt64.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+	PIMAGE_DATA_DIRECTORY pEntry = fIs64Bit ? &pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT]
+											: &pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+
+	// disable the import directory
+	K22_D("Import Directory @ RVA %p", pEntry->VirtualAddress);
+	pK22HdrData->dwRvaImportDirectory = pEntry->VirtualAddress;
+	pEntry->VirtualAddress			  = 0;
+
+	// leave a trace for K22 Core DLL
+	CopyMemory(pK22HdrData->abPatcherCookie, K22_PATCHER_COOKIE, 3);
+	pK22HdrData->bPatcherType = bPatcherType;
+
+	return TRUE;
+}
+
 BOOL K22PatchRemoteImportTable(HANDLE hProcess, LPVOID lpImageBase) {
 	DWORD dwOldProtect;
 
@@ -75,21 +95,7 @@ BOOL K22PatchRemoteImportTable(HANDLE hProcess, LPVOID lpImageBase) {
 	if (!K22ReadProcessMemory(hProcess, lpImageBase, stDosHeader.e_lfanew, stNt))
 		RETURN_K22_F_ERR("Couldn't read NT header");
 
-	// get a handle to K22 data in DOS header
-	PK22_HDR_DATA pK22HdrData = K22_DOS_HDR_DATA(&stDosHeader);
-	// fetch import directory entry
-	BOOL fIs64Bit				 = stNt.stNt64.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC;
-	PIMAGE_DATA_DIRECTORY pEntry = fIs64Bit ? &stNt.stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT]
-											: &stNt.stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
-
-	// disable the import directory
-	K22_D("Import Directory @ RVA %p", pEntry->VirtualAddress);
-	pK22HdrData->dwRvaImportDirectory = pEntry->VirtualAddress;
-	pEntry->VirtualAddress			  = 0;
-
-	// leave a trace for K22 Core DLL
-	CopyMemory(pK22HdrData->abPatcherCookie, K22_PATCHER_COOKIE, 3);
-	pK22HdrData->bPatcherType = K22_PATCHER_MEMORY;
+	K22PatchImportTable(&stDosHeader, &stNt, K22_PATCHER_PROCESS);
 
 	// write modified DOS header
 	if (!K22UnlockProcessMemory(hProcess, lpImageBase, 0, sizeof(stDosHeader), &dwOldProtect))

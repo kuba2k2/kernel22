@@ -23,8 +23,10 @@ typedef struct {
 #define K22_DOS_HDR_DATA(pDosHeader) ((PK22_HDR_DATA)(&((PIMAGE_DOS_HEADER)(pDosHeader))->e_res))
 
 #define K22_PATCHER_COOKIE	"K22"
-#define K22_PATCHER_MEMORY	'M'
-#define K22_PATCHER_DISK	'D'
+#define K22_PATCHER_PROCESS 'P'
+#define K22_PATCHER_FILE	'F'
+
+// Process memory macros
 
 #define K22ReadProcessMemory(hProcess, lpBaseAddress, ullOffset, vOut)                                                 \
 	ReadProcessMemory(hProcess, (LPCVOID)((ULONGLONG)lpBaseAddress + ullOffset), &vOut, sizeof(vOut), NULL)

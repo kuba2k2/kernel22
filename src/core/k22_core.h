@@ -10,6 +10,7 @@
 K22_CORE_PROC BOOL K22CoreAttachToProcess(HANDLE hProcess);
 // core_patch.c
 K22_CORE_PROC BOOL K22CorePatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor);
+K22_CORE_PROC BOOL K22PatchImportTable(PIMAGE_DOS_HEADER pDosHeader, PIMAGE_NT_HEADERS3264 pNt, BYTE bPatcherType);
 
 /* private Core API */
 
