@@ -3,12 +3,14 @@
 #include "k22_core.h"
 
 static BOOL DllInitialize(HANDLE hDll) {
+	LPVOID lpProcessBase = GetModuleHandle(NULL);
+
 	// ignore processes not patched by K22 Core
-	PK22_HDR_DATA pK22HdrData = K22_DOS_HDR_DATA(GetModuleHandle(NULL));
+	PK22_HDR_DATA pK22HdrData = K22_DOS_HDR_DATA(lpProcessBase);
 	if (memcmp(pK22HdrData->abPatcherCookie, K22_PATCHER_COOKIE, 3) != 0)
 		return TRUE;
 
-	K22_I("Import Directory @ RVA %p", pK22HdrData->dwRvaImportDirectory);
+	K22_D("Import Directory @ RVA %p", pK22HdrData->dwRvaImportDirectory);
 
 	TCHAR szFilename[MAX_PATH + 1];
 	GetModuleFileNameA(NULL, szFilename, sizeof(szFilename));

@@ -2,9 +2,16 @@
 
 #include <stdio.h>
 #include <windows.h>
+#include <winternl.h>
 
 void printWindowsVersion(const char *method_name, int major, int minor, int build) {
-	printf("Windows Version (%s): %d.%d.%d\n", method_name, major, minor, build);
+	printf("Windows Version - %-28s = %d.%d.%d\n", method_name, major, minor, build);
+}
+
+void pebMethod() {
+	PPEB pPeb		   = NtCurrentTeb()->ProcessEnvironmentBlock;
+	PDWORD pdwReserved = (PDWORD)&pPeb->Reserved9;
+	printWindowsVersion("NtCurrentPeb", pdwReserved[44], pdwReserved[45], pdwReserved[46] & 0xFFFF);
 }
 
 void getVersionExMethod() {
@@ -19,7 +26,9 @@ void getVersionMethod() {
 	DWORD version = GetVersion();
 	int major	  = LOBYTE(LOWORD(version));
 	int minor	  = HIBYTE(LOWORD(version));
-	int build	  = 0; // Build number is not available with GetVersion
+	int build	  = 0;
+	if (version < 0x80000000)
+		build = HIWORD(version);
 	printWindowsVersion("GetVersion", major, minor, build);
 }
 
@@ -61,6 +70,18 @@ void rtlGetVersionMethod() {
 	);
 }
 
+void rtlGetNtVersionNumbersMethod() {
+	HANDLE hMod = LoadLibrary("ntdll.dll");
+	typedef void(WINAPI * RtlGetNtVersionNumbers_FUNC)(DWORD *, DWORD *, DWORD *);
+	RtlGetNtVersionNumbers_FUNC RtlGetNtVersionNumbers =
+		(RtlGetNtVersionNumbers_FUNC)GetProcAddress(hMod, "RtlGetNtVersionNumbers");
+	int major;
+	int minor;
+	int build;
+	RtlGetNtVersionNumbers(&major, &minor, &build);
+	printWindowsVersion("RtlGetNtVersionNumbers", major, minor, build & 0xFFFF);
+}
+
 void getFileVersionInfoMethod() {
 	DWORD dwHandle;
 	DWORD dwFileVersionInfoSize = GetFileVersionInfoSize("kernel32.dll", &dwHandle);
@@ -100,11 +121,11 @@ void readRegistryMethod() {
 		}
 		dwSize = 255;
 		if (RegQueryValueEx(hKey, "CurrentBuildNumber", NULL, NULL, (LPBYTE)&buildNumber, &dwSize) == ERROR_SUCCESS) {
-			printf("Windows Version (CurrentBuildNumber): %s.%s\n", version, buildNumber);
+			printf("Windows Version - %-28s = %s.%s\n", "Registry CurrentBuildNumber", version, buildNumber);
 		}
 		dwSize = 255;
 		if (RegQueryValueEx(hKey, "CurrentBuild", NULL, NULL, (LPBYTE)&build, &dwSize) == ERROR_SUCCESS) {
-			printf("Windows Version (CurrentBuild): %s.%s\n", version, build);
+			printf("Windows Version - %-28s = %s.%s\n", "Registry CurrentBuild", version, build);
 		}
 		RegCloseKey(hKey);
 	}
@@ -114,10 +135,12 @@ int main(int argc, const char *argv[]) {
 	for (int i = 0; i < argc; i++) {
 		printf("argv[%d]=%s\n", i, argv[i]);
 	}
+	pebMethod();
 	getVersionExMethod();
 	getVersionMethod();
 	verifyVersionInfoMethod();
 	rtlGetVersionMethod();
+	rtlGetNtVersionNumbersMethod();
 	getFileVersionInfoMethod();
 	readRegistryMethod();
 	return 0;

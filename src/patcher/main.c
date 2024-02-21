@@ -97,6 +97,8 @@ BOOL PatcherMain(HANDLE hFile) {
 	DWORD dwPatchEntry	  = stTargetSection.VirtualAddress + stTargetSection.Misc.VirtualSize;
 	DWORD dwOriginalEntry = stNt.stNt64.OptionalHeader.AddressOfEntryPoint; // 32/64-bit have the same offset
 
+	K22_D("Original entry @ RVA %lX, LoadLibraryA @ %p", dwOriginalEntry, LoadLibraryA);
+
 	if (fIs64Bit) {
 		CODE64_LOAD_LIBRARY_ADDR(pPatchCode) = (ULONGLONG)LoadLibraryA;
 		CODE64_JUMP_ADDR(pPatchCode)		 = dwOriginalEntry - dwPatchEntry - CODE64_JUMP_OFFS - CODE64_JUMP_SIZE;
@@ -130,8 +132,10 @@ int main(int argc, const char *argv[]) {
 
 	HANDLE hFile =
 		CreateFile(lpImageName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE)
-		RETURN_K22_F_ERR("Couldn't open the file '%s'", lpImageName);
+	if (hFile == INVALID_HANDLE_VALUE) {
+		K22_F_ERR("Couldn't open the file '%s'", lpImageName);
+		return 1;
+	}
 
 	BOOL fResult = PatcherMain(hFile);
 	CloseHandle(hFile);
