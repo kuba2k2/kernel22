@@ -18,7 +18,7 @@
 	K22LogWrite(dwLevel, NULL, 0, NULL, bWin32Error, __VA_ARGS__)
 #endif
 
-VOID K22LogWrite(
+K22_CORE_PROC VOID K22LogWrite(
 	DWORD dwLevel, LPCSTR lpFile, DWORD dwLine, LPCSTR lpFunction, DWORD dwWin32Error, LPCSTR lpFormat, ...
 ); // __attribute__((format(printf, 6, 7)));
 

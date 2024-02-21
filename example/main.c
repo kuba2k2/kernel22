@@ -12,6 +12,7 @@ void pebMethod() {
 	PPEB pPeb		   = NtCurrentTeb()->ProcessEnvironmentBlock;
 	PDWORD pdwReserved = (PDWORD)&pPeb->Reserved9;
 	printWindowsVersion("NtCurrentPeb", pdwReserved[44], pdwReserved[45], pdwReserved[46] & 0xFFFF);
+	printf("Windows Version - %-28s = %ls\n", "CSDVersion", ((PUNICODE_STRING)((ULONGLONG)pPeb + 0x2E8))->Buffer);
 }
 
 void getVersionExMethod() {

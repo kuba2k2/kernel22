@@ -1,6 +1,6 @@
 // Copyright (c) Kuba Szczodrzyński 2024-2-19.
 
-#include "k22_hexdump.h"
+#include "kernel22.h"
 
 VOID K22HexDump(CONST BYTE *pBuf, SIZE_T cbLength, ULONGLONG ullOffset) {
 	DWORD cbPos = 0;

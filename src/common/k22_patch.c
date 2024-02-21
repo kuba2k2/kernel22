@@ -1,8 +1,8 @@
 // Copyright (c) Kuba Szczodrzyński 2024-2-18.
 
-#include "k22_core.h"
+#include "kernel22.h"
 
-BOOL K22CorePatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor) {
+BOOL K22PatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor) {
 	HANDLE hKernel32	   = GetModuleHandle("kernel32.dll");
 	HANDLE hCurrentProcess = GetCurrentProcess();
 

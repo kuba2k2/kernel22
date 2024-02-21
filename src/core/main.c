@@ -1,6 +1,6 @@
 // Copyright (c) Kuba Szczodrzyński 2024-2-17.
 
-#include "k22_core.h"
+#include "kernel22.h"
 
 static BOOL DllInitialize(HANDLE hDll) {
 	LPVOID lpProcessBase = GetModuleHandle(NULL);

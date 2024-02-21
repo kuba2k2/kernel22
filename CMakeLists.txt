@@ -10,8 +10,8 @@ endif ()
 set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB SRCS_CORE "src/common/*.c" "src/core/*.c")
-file(GLOB SRCS_LOADER "src/common/*.c" "src/loader/*.c")
-file(GLOB SRCS_PATCHER "src/common/*.c" "src/patcher/*.c")
+file(GLOB SRCS_LOADER "src/loader/*.c")
+file(GLOB SRCS_PATCHER "src/patcher/*.c")
 file(GLOB SRCS_EXAMPLE "example/*.c")
 
 add_link_options(/INCREMENTAL:NO)
@@ -20,7 +20,7 @@ include_directories("src/" "src/common/")
 add_compile_definitions("K22_BITS${K22_BITS}")
 
 add_library(core SHARED ${SRCS_CORE})
-target_include_directories(core PUBLIC "src/core/")
+target_include_directories(core PRIVATE "src/core/")
 target_compile_definitions(core PRIVATE K22_CORE=1)
 set_target_properties(core PROPERTIES OUTPUT_NAME "K22Core${K22_BITS}")
 
@@ -40,6 +40,6 @@ add_executable(example ${SRCS_EXAMPLE})
 set_target_properties(example PROPERTIES OUTPUT_NAME "Example${K22_BITS}")
 
 set_target_properties(
-	core loader PROPERTIES
+	core loader patcher PROPERTIES
 	MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
 )

@@ -1,10 +1,10 @@
 // Copyright (c) Kuba Szczodrzyński 2024-2-19.
 
-#include "k22_core.h"
+#include "kernel22.h"
 
 static BOOL K22PostInitLoadLibrary(HANDLE hProcess, LPVOID lpPebBase, LPSTR lpLibFileName);
 
-BOOL K22CoreAttachToProcess(HANDLE hProcess) {
+BOOL K22RemoteAttachToProcess(HANDLE hProcess) {
 	// find PEB of the debugged process
 	PROCESS_BASIC_INFORMATION stProcessBasicInformation;
 	if (!NT_SUCCESS(NtQueryInformationProcess(

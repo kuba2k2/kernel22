@@ -21,7 +21,7 @@ BOOL K22DebugProcess(HANDLE hProcess, HANDLE hThread) {
 	// kill the target process when something goes wrong (and the debugger returns)
 	DebugSetProcessKillOnExit(TRUE);
 
-	if (!K22CoreAttachToProcess(hProcess))
+	if (!K22RemoteAttachToProcess(hProcess))
 		return FALSE;
 
 	// resume the main thread when we're ready

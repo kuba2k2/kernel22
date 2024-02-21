@@ -9,7 +9,7 @@ BOOL LoaderMain() {
 	K22_I("Application path: '%s'", lpApplicationPath);
 	K22_I("Command line: '%s'", lpCommandLine);
 
-	if (!K22CorePatchVersionCheck(11, 0))
+	if (!K22PatchVersionCheck(11, 0))
 		return FALSE;
 	K22_I("PE image version check patched");
 
@@ -23,7 +23,7 @@ BOOL LoaderMain() {
 		return FALSE;
 	K22_I("Debugging finished");
 #else
-	if (!K22CoreAttachToProcess(stProcessInformation.hProcess))
+	if (!K22RemoteAttachToProcess(stProcessInformation.hProcess))
 		return FALSE;
 	K22_I("Attached K22 Core to process");
 
