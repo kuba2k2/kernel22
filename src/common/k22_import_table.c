@@ -2,13 +2,21 @@
 
 #include "kernel22.h"
 
-static VOID K22ImportTablePatch(
+static BOOL K22ImportTablePatch(
 	BYTE bSource, PIMAGE_K22_HEADER pK22Header, PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor, PULONGLONG pFirstThunk
 ) {
+	// make sure there's enough room in the DOS stub
+	if (pK22Header->dwPeRva < sizeof(*pK22Header))
+		RETURN_K22_F(
+			"PE header overlaps DOS stub! Not enough free space. (0x%X < 0x%X)",
+			pK22Header->dwPeRva,
+			sizeof(*pK22Header)
+		);
+
 	// set header cookie
 	if (memcmp(pK22Header->bCookie, K22_COOKIE, 3) == 0) {
 		K22_W("Image has already been patched!");
-		return;
+		return TRUE;
 	}
 	memcpy(pK22Header->bCookie, K22_COOKIE, 3);
 	pK22Header->bSource = bSource;
@@ -35,6 +43,8 @@ static VOID K22ImportTablePatch(
 	strcpy(pK22Header->szModuleName, "K22Core64.dll");
 	strcpy(pK22Header->szSymbolName, K22_LOAD_SYMBOL);
 	pK22Header->wSymbolHint = 0;
+
+	return TRUE;
 }
 
 BOOL K22ImportTablePatchProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBase) {
@@ -64,7 +74,8 @@ BOOL K22ImportTablePatchProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBas
 		RETURN_K22_F_ERR("Couldn't read first thunk");
 
 	// modify the import table
-	K22ImportTablePatch(bSource, &stK22Header, stImportDescriptor, ullFirstThunk);
+	if (!K22ImportTablePatch(bSource, &stK22Header, stImportDescriptor, ullFirstThunk))
+		return FALSE;
 
 	// write modified DOS header
 	if (!K22UnlockProcessMemory(hProcess, lpImageBase, 0, sizeof(stK22Header), &dwOldProtect))
@@ -121,7 +132,8 @@ BOOL K22ImportTablePatchImage(BYTE bSource, LPVOID lpImageBase) {
 		RETURN_K22_F_ERR("Couldn't unlock first thunk");
 
 	// modify the import table
-	K22ImportTablePatch(bSource, pK22Header, pImportDescriptor, pFirstThunk);
+	if (!K22ImportTablePatch(bSource, pK22Header, pImportDescriptor, pFirstThunk))
+		return FALSE;
 
 	return TRUE;
 }
@@ -202,7 +214,8 @@ next:
 	LocalFree(pSections);
 
 	// modify the import table
-	K22ImportTablePatch(bSource, &stK22Header, stImportDescriptor, ullFirstThunk);
+	if (!K22ImportTablePatch(bSource, &stK22Header, stImportDescriptor, ullFirstThunk))
+		return FALSE;
 
 	// write modified DOS header
 	if (!K22WriteFile(hFile, 0, stK22Header, &dwFileBytes))

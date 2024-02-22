@@ -10,8 +10,8 @@ typedef struct {
 	BYTE bCookie[3];	   // e_res[0], LOBYTE(e_res[1])
 	BYTE bSource;		   // HIBYTE(e_res[1])
 
-	DWORD dwUnused1[1];	   // e_res[2], e_res[3]
-	DWORD Reserved2;	   // e_oemid, e_oeminfo
+	WORD wSymbolHint;	   // e_res[2]
+	CHAR szSymbolName[6];  // e_res[3], e_oemid, e_oeminfo
 	CHAR szModuleName[20]; // e_res2[0], ..., e_res2[10]
 
 	DWORD dwPeRva;		   // e_lfanew
@@ -19,8 +19,6 @@ typedef struct {
 	// DOS stub
 	IMAGE_IMPORT_DESCRIPTOR stOrigImportDescriptor[2];
 	ULONGLONG ullOrigFirstThunk[2];
-	WORD wSymbolHint;
-	CHAR szSymbolName[6];
 } IMAGE_K22_HEADER, *PIMAGE_K22_HEADER;
 
 #define K22_DOS_HDR_DATA(lpImageBase) ((PIMAGE_K22_HEADER)(lpImageBase))
@@ -34,6 +32,6 @@ typedef struct {
 #define K22_LOAD_SYMBOL "DllLd"
 
 static VOID BuildBugCheck() {
-	BUILD_BUG_ON(sizeof(IMAGE_K22_HEADER) != 128);
+	BUILD_BUG_ON(sizeof(IMAGE_K22_HEADER) != 120);
 	BUILD_BUG_ON(sizeof(K22_LOAD_SYMBOL) != 6);
 }
