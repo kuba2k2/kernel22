@@ -5,23 +5,35 @@
 #include "kernel22.h"
 
 typedef struct {
-	// e_res[0], e_res[1]
-	BYTE abPatcherCookie[3];
-	BYTE bPatcherType;
-	// e_res[2], e_res[3]
-	DWORD dwUnused1;
+	DWORD Reserved1[7];	   // e_magic, ..., e_ovno
 
-	// e_oemid, e_oeminfo
-	DWORD _dwOem;
+	BYTE bCookie[3];	   // e_res[0], LOBYTE(e_res[1])
+	BYTE bSource;		   // HIBYTE(e_res[1])
 
-	// e_res2[0], e_res2[1]
-	DWORD dwRvaImportDirectory;
-	// e_res2[2], e_res2[3], ...
-	DWORD dwUnused2[4];
-} K22_HDR_DATA, *PK22_HDR_DATA;
+	DWORD dwUnused1[1];	   // e_res[2], e_res[3]
+	DWORD Reserved2;	   // e_oemid, e_oeminfo
+	CHAR szModuleName[20]; // e_res2[0], ..., e_res2[10]
 
-#define K22_DOS_HDR_DATA(pDosHeader) ((PK22_HDR_DATA)(&((PIMAGE_DOS_HEADER)(pDosHeader))->e_res))
+	DWORD dwPeRva;		   // e_lfanew
 
-#define K22_PATCHER_COOKIE	"K22"
-#define K22_PATCHER_PROCESS 'P'
-#define K22_PATCHER_FILE	'F'
+	// DOS stub
+	IMAGE_IMPORT_DESCRIPTOR stOrigImportDescriptor[2];
+	ULONGLONG ullOrigFirstThunk[2];
+	WORD wSymbolHint;
+	CHAR szSymbolName[6];
+} IMAGE_K22_HEADER, *PIMAGE_K22_HEADER;
+
+#define K22_DOS_HDR_DATA(lpImageBase) ((PIMAGE_K22_HEADER)(lpImageBase))
+
+#define K22_COOKIE			"K22"
+#define K22_SOURCE_PARENT	'H'
+#define K22_SOURCE_LOADER	'L'
+#define K22_SOURCE_VERIFIER 'V'
+#define K22_SOURCE_PATCHER	'F'
+
+#define K22_LOAD_SYMBOL "DllLd"
+
+static VOID BuildBugCheck() {
+	BUILD_BUG_ON(sizeof(IMAGE_K22_HEADER) != 128);
+	BUILD_BUG_ON(sizeof(K22_LOAD_SYMBOL) != 6);
+}

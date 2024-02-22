@@ -2,15 +2,18 @@
 
 #include "kernel22.h"
 
+// dummy entrypoint to import Core DLL
+K22_CORE_PROC VOID DllLd() {}
+
 static BOOL DllInitialize(HANDLE hDll) {
 	LPVOID lpProcessBase = GetModuleHandle(NULL);
 
 	// ignore processes not patched by K22 Core
-	PK22_HDR_DATA pK22HdrData = K22_DOS_HDR_DATA(lpProcessBase);
-	if (memcmp(pK22HdrData->abPatcherCookie, K22_PATCHER_COOKIE, 3) != 0)
+	PIMAGE_K22_HEADER pK22Header = K22_DOS_HDR_DATA(lpProcessBase);
+	if (memcmp(pK22Header->bCookie, K22_COOKIE, 3) != 0)
 		return TRUE;
 
-	K22_D("Import Directory @ RVA %p", pK22HdrData->dwRvaImportDirectory);
+	K22_D("Load Source: %c", pK22Header->bSource);
 
 	TCHAR szFilename[MAX_PATH + 1];
 	GetModuleFileNameA(NULL, szFilename, sizeof(szFilename));

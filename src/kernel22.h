@@ -14,6 +14,8 @@
 #include <strsafe.h>
 #include <winternl.h>
 
+#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2 * !!(condition)]))
+
 #if K22_CORE
 // core exports public functions
 #define K22_CORE_PROC __declspec(dllexport)
@@ -36,10 +38,11 @@
 // k22_hexdump.c
 K22_CORE_PROC VOID K22HexDump(CONST BYTE *pBuf, SIZE_T cbLength, ULONGLONG ullOffset);
 K22_CORE_PROC VOID K22HexDumpProcess(HANDLE hProcess, LPCVOID lpAddress, SIZE_T cbLength);
+// k22_import_table.c
+K22_CORE_PROC BOOL K22ImportTablePatchProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBase);
+K22_CORE_PROC BOOL K22ImportTablePatchImage(BYTE bSource, LPVOID lpImageBase);
+K22_CORE_PROC BOOL K22ImportTablePatchFile(BYTE bSource, HANDLE hFile);
 // k22_patch.c
 K22_CORE_PROC BOOL K22PatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor);
-K22_CORE_PROC BOOL K22PatchImportTable(PIMAGE_DOS_HEADER pDosHeader, PIMAGE_NT_HEADERS3264 pNt, BYTE bPatcherType);
-K22_CORE_PROC BOOL K22PatchRemoteImportTable(HANDLE hProcess, LPVOID lpImageBase);
-K22_CORE_PROC BOOL K22PatchLocalImportTable(LPVOID lpImageBase);
 // k22_remote.c
 K22_CORE_PROC BOOL K22RemoteAttachToProcess(HANDLE hProcess);

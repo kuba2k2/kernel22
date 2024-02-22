@@ -24,14 +24,9 @@ BOOL K22RemoteAttachToProcess(HANDLE hProcess) {
 	LPVOID lpImageBase = stPeb.Reserved3[1];
 	K22_D("Process image base address: %p", lpImageBase);
 
-	// clear the PE image import table
-	K22_I("Terminating import table");
-	if (!K22PatchRemoteImportTable(hProcess, lpImageBase))
-		return FALSE;
-
-	// patch post-init routine in PEB to load K22 module DLL
-	K22_I("Attaching post-init routine");
-	if (!K22PostInitLoadLibrary(hProcess, stProcessBasicInformation.PebBaseAddress, "K22Core64.dll"))
+	// patch import table to load K22 Core
+	K22_I("Patching import table");
+	if (!K22ImportTablePatchProcess(K22_SOURCE_LOADER, hProcess, lpImageBase))
 		return FALSE;
 
 	return TRUE;

@@ -44,3 +44,13 @@
 #define K22WriteFileArray(hProcess, lOffset, pvIn, pBytesWritten)                                                      \
 	(SetFilePointer(hFile, lOffset, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER &&                                   \
 	 WriteFile(hFile, pvIn, sizeof(pvIn), pBytesWritten, NULL))
+
+// PE image helper macros
+
+#define RVA(dwRva) ((LPVOID)((ULONG_PTR)(lpImageBase) + (dwRva)))
+
+#define K22_NT_DATA_RVA(pNt, eEntry)                                                                                   \
+	(((pNt)->stNt64.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC                                              \
+		  ? (pNt)->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT]                                   \
+		  : (pNt)->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT])                                  \
+		 .VirtualAddress)
