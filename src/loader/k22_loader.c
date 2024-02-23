@@ -81,7 +81,7 @@ BOOL K22CreateProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPROCESS_
 			) != 0) {
 			K22_W_ERR("Couldn't query current process information");
 		} else {
-			DWORD dwParentId = (DWORD)((ULONGLONG)stProcessBasicInformation.Reserved3);
+			DWORD dwParentId = (DWORD)((ULONGLONG)stProcessBasicInformation.InheritedFromUniqueProcessId);
 			hParentProcess	 = OpenProcess(PROCESS_CREATE_PROCESS, FALSE, dwParentId);
 			if (hParentProcess == INVALID_HANDLE_VALUE) {
 				K22_W_ERR("Couldn't open parent process handle (PPID %ul)", dwParentId);

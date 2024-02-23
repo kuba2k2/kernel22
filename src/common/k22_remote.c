@@ -21,7 +21,7 @@ BOOL K22RemoteAttachToProcess(HANDLE hProcess) {
 	if (!K22ReadProcessMemory(hProcess, stProcessBasicInformation.PebBaseAddress, 0, stPeb))
 		RETURN_K22_F_ERR("Couldn't read PEB");
 	// extract base memory address
-	LPVOID lpImageBase = stPeb.Reserved3[1];
+	LPVOID lpImageBase = stPeb.ImageBaseAddress;
 	K22_D("Process image base address: %p", lpImageBase);
 
 	// patch import table to load K22 Core

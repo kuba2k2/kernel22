@@ -12,7 +12,8 @@
 #include <processthreadsapi.h>
 #include <psapi.h>
 #include <strsafe.h>
-#include <winternl.h>
+
+#include "ntdll.h"
 
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2 * !!(condition)]))
 
