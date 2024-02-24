@@ -14,6 +14,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/K22_${K22_BITS}")
 file(GLOB SRCS_CORE "src/common/*.c" "src/core/*.c")
 file(GLOB SRCS_LOADER "src/loader/*.c")
 file(GLOB SRCS_PATCHER "src/patcher/*.c")
+file(GLOB SRCS_VERIFIER "src/verifier/*.c" "src/common/k22_import_table.c")
 file(GLOB SRCS_EXAMPLE "example/*.c")
 
 add_link_options(/INCREMENTAL:NO)
@@ -38,10 +39,16 @@ target_include_directories(patcher PRIVATE "src/patcher/")
 target_compile_definitions(patcher PRIVATE K22_PATCHER=1)
 set_target_properties(patcher PROPERTIES OUTPUT_NAME "K22Patcher")
 
+add_library(verifier SHARED ${SRCS_VERIFIER})
+target_link_options(verifier PRIVATE /nodefaultlib /entry:DllMain)
+target_include_directories(verifier PRIVATE "src/verifier/")
+target_compile_definitions(verifier PRIVATE K22_VERIFIER=1)
+set_target_properties(verifier PROPERTIES OUTPUT_NAME "K22Verifier")
+
 add_executable(example ${SRCS_EXAMPLE})
 set_target_properties(example PROPERTIES OUTPUT_NAME "Example${K22_BITS}")
 
 set_target_properties(
-	core loader patcher PROPERTIES
+	core loader patcher verifier PROPERTIES
 	MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
 )

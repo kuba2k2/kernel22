@@ -53,6 +53,8 @@ static BOOL K22ImportTablePatch(
 	return TRUE;
 }
 
+#if !K22_VERIFIER
+
 BOOL K22ImportTablePatchProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBase) {
 	DWORD dwOldProtect;
 
@@ -106,6 +108,8 @@ BOOL K22ImportTablePatchProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBas
 	return TRUE;
 }
 
+#endif
+
 BOOL K22ImportTablePatchImage(BYTE bSource, LPVOID lpImageBase) {
 	DWORD dwOldProtect;
 
@@ -143,6 +147,8 @@ BOOL K22ImportTablePatchImage(BYTE bSource, LPVOID lpImageBase) {
 
 	return TRUE;
 }
+
+#if !K22_VERIFIER
 
 static DWORD K22RvaToRaw(PIMAGE_SECTION_HEADER pSections, PIMAGE_SECTION_HEADER pSectionsEnd, DWORD dwRva) {
 	for (PIMAGE_SECTION_HEADER pSection = pSections; pSection < pSectionsEnd; pSection++) {
@@ -237,3 +243,5 @@ next:
 		RETURN_K22_F_ERR("Couldn't write first thunk");
 	return TRUE;
 }
+
+#endif
