@@ -22,7 +22,10 @@ link_libraries(ntdll kernel32 version)
 include_directories("src/" "src/common/")
 add_compile_definitions("K22_BITS${K22_BITS}")
 
+add_subdirectory("minhook/" minhook)
+
 add_library(core SHARED ${SRCS_CORE})
+target_link_libraries(core PRIVATE minhook)
 target_include_directories(core PRIVATE "src/core/")
 target_compile_definitions(core PRIVATE K22_CORE=1)
 set_target_properties(core PROPERTIES OUTPUT_NAME "K22Core")
