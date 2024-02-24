@@ -2,6 +2,12 @@
 
 #include "kernel22.h"
 
+#undef RtlCopyMemory
+#undef RtlZeroMemory
+
+void RtlCopyMemory(void *Destination, const void *Source, size_t Length);
+void RtlZeroMemory(void *Destination, size_t Length);
+
 static BOOL K22ImportTablePatch(
 	BYTE bSource, PIMAGE_K22_HEADER pK22Header, PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor, PULONGLONG pFirstThunk
 ) {
@@ -14,11 +20,11 @@ static BOOL K22ImportTablePatch(
 		);
 
 	// set header cookie
-	if (memcmp(pK22Header->bCookie, K22_COOKIE, 3) == 0) {
+	if (RtlCompareMemory(pK22Header->bCookie, K22_COOKIE, 3) == 3) {
 		K22_W("Image has already been patched!");
 		return TRUE;
 	}
-	memcpy(pK22Header->bCookie, K22_COOKIE, 3);
+	RtlCopyMemory(pK22Header->bCookie, K22_COOKIE, 3);
 	pK22Header->bSource = bSource;
 
 	// copy original import directory
@@ -28,8 +34,8 @@ static BOOL K22ImportTablePatch(
 	pK22Header->ullOrigFirstThunk[1]	  = pFirstThunk[1];
 
 	// clear the import directory
-	ZeroMemory((PVOID)pImportDescriptor, sizeof(*pImportDescriptor) * 2);
-	ZeroMemory((PVOID)pFirstThunk, sizeof(*pFirstThunk) * 2);
+	RtlZeroMemory((PVOID)pImportDescriptor, sizeof(*pImportDescriptor) * 2);
+	RtlZeroMemory((PVOID)pFirstThunk, sizeof(*pFirstThunk) * 2);
 
 	// rebuild the first import descriptor
 	// point to name in DOS header
@@ -40,8 +46,8 @@ static BOOL K22ImportTablePatch(
 	pFirstThunk[0] = (ULONG_PTR)&pK22Header->wSymbolHint - (ULONG_PTR)pK22Header;
 
 	// store names in the header
-	strcpy(pK22Header->szModuleName, "K22Core64.dll");
-	strcpy(pK22Header->szSymbolName, K22_LOAD_SYMBOL);
+	RtlCopyMemory(pK22Header->szModuleName, K22_CORE_DLL, sizeof(K22_CORE_DLL));
+	RtlCopyMemory(pK22Header->szSymbolName, K22_LOAD_SYMBOL, sizeof(K22_LOAD_SYMBOL));
 	pK22Header->wSymbolHint = 0;
 
 	return TRUE;
@@ -119,16 +125,16 @@ BOOL K22ImportTablePatchImage(BYTE bSource, LPVOID lpImageBase) {
 	PULONG_PTR pFirstThunk = (PULONG_PTR)RVA(dwFirstThunkRva);
 
 	// unlock DOS header
-	if (!VirtualProtect(pK22Header, sizeof(*pK22Header), PAGE_READWRITE, &dwOldProtect))
+	if (!K22UnlockMemory(*pK22Header))
 		RETURN_K22_F_ERR("Couldn't unlock DOS header");
 	// unlock NT header
-	if (!VirtualProtect(pNt, sizeof(*pNt), PAGE_READWRITE, &dwOldProtect))
+	if (!K22UnlockMemory(*pNt))
 		RETURN_K22_F_ERR("Couldn't unlock NT header");
 	// unlock import directory
-	if (!VirtualProtect((PVOID)pImportDescriptor, sizeof(*pImportDescriptor) * 2, PAGE_READWRITE, &dwOldProtect))
+	if (!K22UnlockMemoryLength((PVOID)pImportDescriptor, sizeof(*pImportDescriptor) * 2))
 		RETURN_K22_F_ERR("Couldn't unlock import directory");
 	// unlock first thunk
-	if (!VirtualProtect((PVOID)pFirstThunk, sizeof(*pFirstThunk) * 2, PAGE_READWRITE, &dwOldProtect))
+	if (!K22UnlockMemoryLength((PVOID)pFirstThunk, sizeof(*pFirstThunk) * 2))
 		RETURN_K22_F_ERR("Couldn't unlock first thunk");
 
 	// modify the import table

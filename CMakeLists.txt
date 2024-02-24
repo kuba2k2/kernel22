@@ -9,6 +9,8 @@ endif ()
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/K22_${K22_BITS}")
+
 file(GLOB SRCS_CORE "src/common/*.c" "src/core/*.c")
 file(GLOB SRCS_LOADER "src/loader/*.c")
 file(GLOB SRCS_PATCHER "src/patcher/*.c")
@@ -22,19 +24,19 @@ add_compile_definitions("K22_BITS${K22_BITS}")
 add_library(core SHARED ${SRCS_CORE})
 target_include_directories(core PRIVATE "src/core/")
 target_compile_definitions(core PRIVATE K22_CORE=1)
-set_target_properties(core PROPERTIES OUTPUT_NAME "K22Core${K22_BITS}")
+set_target_properties(core PROPERTIES OUTPUT_NAME "K22Core")
 
 add_executable(loader ${SRCS_LOADER})
 target_link_libraries(loader PRIVATE core)
 target_include_directories(loader PRIVATE "src/loader/")
 target_compile_definitions(loader PRIVATE K22_LOADER=1)
-set_target_properties(loader PROPERTIES OUTPUT_NAME "K22Loader${K22_BITS}")
+set_target_properties(loader PROPERTIES OUTPUT_NAME "K22Loader")
 
 add_executable(patcher ${SRCS_PATCHER})
 target_link_libraries(patcher PRIVATE core)
 target_include_directories(patcher PRIVATE "src/patcher/")
 target_compile_definitions(patcher PRIVATE K22_PATCHER=1)
-set_target_properties(patcher PROPERTIES OUTPUT_NAME "K22Patcher${K22_BITS}")
+set_target_properties(patcher PROPERTIES OUTPUT_NAME "K22Patcher")
 
 add_executable(example ${SRCS_EXAMPLE})
 set_target_properties(example PROPERTIES OUTPUT_NAME "Example${K22_BITS}")

@@ -29,6 +29,7 @@ typedef struct {
 #define K22_SOURCE_VERIFIER 'V'
 #define K22_SOURCE_PATCHER	'F'
 
+#define K22_CORE_DLL	"K22Core.dll"
 #define K22_LOAD_SYMBOL "DllLd"
 
 static VOID BuildBugCheck() {

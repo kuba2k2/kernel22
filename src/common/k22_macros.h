@@ -23,6 +23,12 @@
 #define K22UnlockProcessMemory(hProcess, lpBaseAddress, ullOffset, cbLength, lpOldProtect)                             \
 	VirtualProtectEx(hProcess, (LPVOID)((ULONGLONG)lpBaseAddress + ullOffset), cbLength, PAGE_READWRITE, lpOldProtect)
 
+// Memory macros
+
+#define K22UnlockMemory(vIn)				  VirtualProtect(&vIn, sizeof(vIn), PAGE_READWRITE, &dwOldProtect)
+#define K22UnlockMemoryLength(pvIn, cbLength) VirtualProtect(pvIn, cbLength, PAGE_READWRITE, &dwOldProtect)
+#define K22UnlockMemoryArray(pvIn)			  VirtualProtect(pvIn, sizeof(pvIn), PAGE_READWRITE, &dwOldProtect)
+
 // File macros
 
 #define K22ReadFile(hFile, lOffset, vOut, pBytesRead)                                                                  \
