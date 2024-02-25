@@ -89,11 +89,18 @@ K22_CORE_PROC VOID K22LogWrite(
 		K22_LOG(K22_LEVEL_FATAL, __FILE__, __LINE__, __FUNCTION__, GetLastError(), __VA_ARGS__);                       \
 		return FALSE;                                                                                                  \
 	} while (0)
+#define RETURN_K22_F_ERR_VAL(...)                                                                                      \
+	do {                                                                                                               \
+		K22_LOG(K22_LEVEL_FATAL, __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__);                                       \
+		return FALSE;                                                                                                  \
+	} while (0)
 #else
 #define K22_F(...)
 #define K22_F_ERR(...)
 #define RETURN_K22_F(...)                                                                                              \
 	{ return FALSE; }
 #define RETURN_K22_F_ERR(...)                                                                                          \
+	{ return FALSE; }
+#define RETURN_K22_F_ERR_VAL(...)                                                                                      \
 	{ return FALSE; }
 #endif

@@ -13,14 +13,7 @@ static BOOL DllInitialize(HANDLE hDll) {
 	if (memcmp(pK22Header->bCookie, K22_COOKIE, 3) != 0)
 		return TRUE;
 
-	K22_D("Load Source: %c", pK22Header->bSource);
-
-	TCHAR szFilename[MAX_PATH + 1];
-	GetModuleFileNameA(NULL, szFilename, sizeof(szFilename));
-	printf("DLL_PROCESS_ATTACH: %s\n", szFilename);
-	MessageBox(NULL, szFilename, "DLL_PROCESS_ATTACH", MB_ICONINFORMATION);
-
-	return TRUE;
+	return K22CoreMain(pK22Header);
 }
 
 static VOID DllError() {

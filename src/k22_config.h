@@ -38,3 +38,8 @@
 #ifndef K22_LOADER_DEBUGGER
 #define K22_LOADER_DEBUGGER 0
 #endif
+
+// Core configuration
+#ifndef K22_REG_KEY_PATH
+#define K22_REG_KEY_PATH "SOFTWARE\\kuba2k2\\Kernel22"
+#endif
