@@ -4,7 +4,8 @@
 
 PK22_DATA pK22Data;
 
-static LPSTR K22DataDupFileName(LPSTR lpInput, DWORD cbInput);
+static BOOL K22DataDupString(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
+static BOOL K22DataDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
 
 BOOL K22DataInitialize(PIMAGE_K22_HEADER pK22Header) {
 	if (pK22Data == NULL)
@@ -53,7 +54,6 @@ BOOL K22DataReadConfig() {
 	DWORD cbValue;
 
 	DWORD dwIndex;
-	PVOID ppNext;
 
 	K22_REG_REQUIRE_VALUE(pK22Data->stReg.hMain, "InstallDir", szValue, cbValue);
 	pK22Data->stConfig.lpInstallDir = _strdup(szValue);
@@ -67,13 +67,19 @@ BOOL K22DataReadConfig() {
 
 		HKEY hDllExtra;
 		if (K22_REG_OPEN_KEY(hConfig, "DllExtra", hDllExtra)) {
-			PK22_DLL_EXTRA pDllExtra;
-			K22_LL_END(PK22_DLL_EXTRA, pK22Data->stConfig.pDllExtra, pDllExtra, ppNext);
-
 			K22_REG_ENUM_VALUE(hDllExtra, szName, cbName, szValue, cbValue) {
-				K22_LL_APPEND(PK22_DLL_EXTRA, pDllExtra, ppNext);
-				pDllExtra->lpFileName = K22DataDupFileName(szValue, cbValue);
-				K22_D(" - DLL Extra: %s", pDllExtra->lpFileName);
+				PK22_DLL_EXTRA pDllExtra;
+				K22_LL_FIND(pK22Data->stConfig.pDllExtra, pDllExtra, strcmp(szName, pDllExtra->lpKey) == 0);
+				if (pDllExtra == NULL) {
+					K22_LL_ALLOC_APPEND(pK22Data->stConfig.pDllExtra, pDllExtra);
+					if (!K22DataDupString(szName, cbName, &pDllExtra->lpKey))
+						return FALSE;
+				} else {
+					K22_D(" - DLL Extra: removing %s", pDllExtra->lpFileName);
+				}
+				if (!K22DataDupFileName(szValue, cbValue - 1, &pDllExtra->lpFileName))
+					return FALSE;
+				K22_D(" - DLL Extra: adding %s", pDllExtra->lpFileName);
 			}
 		}
 	}
@@ -81,17 +87,22 @@ BOOL K22DataReadConfig() {
 	return TRUE;
 }
 
-static LPSTR K22DataDupFileName(LPSTR lpInput, DWORD cbInput) {
+static BOOL K22DataDupString(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput) {
+	if (*ppOutput)
+		free(*ppOutput);
+	cchInput++; // count the NULL terminator
+	K22_MALLOC_LENGTH(*ppOutput, cchInput);
+	memcpy(*ppOutput, lpInput, cchInput);
+	return TRUE;
+}
+
+static BOOL K22DataDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput) {
 	if (lpInput[0] != '@')
-		return _strdup(lpInput);
-	LPSTR lpOutput;
+		return K22DataDupString(lpInput, cchInput, ppOutput);
+	lpInput++; // skip the @ character; cchInput now accounts for the NULL terminator
 	DWORD cchInstallDir = pK22Data->stConfig.cbInstallDir - 1;
-	cbInput--;
-	lpInput++;
-
-	K22_MALLOC_LENGTH(lpOutput, cchInstallDir + cbInput);
-	memcpy(lpOutput, pK22Data->stConfig.lpInstallDir, cchInstallDir);
-	memcpy(lpOutput + cchInstallDir, lpInput, cbInput);
-
-	return lpOutput;
+	K22_MALLOC_LENGTH(*ppOutput, cchInstallDir + cchInput);
+	memcpy(*ppOutput, pK22Data->stConfig.lpInstallDir, cchInstallDir);
+	memcpy(*ppOutput + cchInstallDir, lpInput, cchInput);
+	return TRUE;
 }

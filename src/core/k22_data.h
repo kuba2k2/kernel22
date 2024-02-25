@@ -7,6 +7,7 @@
 // DllExtra
 
 typedef struct K22_DLL_EXTRA {
+	LPSTR lpKey;	  // arbitrary name of this entry
 	LPSTR lpFileName; // name of DLL to load
 	struct K22_DLL_EXTRA *pPrev;
 	struct K22_DLL_EXTRA *pNext;

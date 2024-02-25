@@ -14,6 +14,7 @@
 #include <strsafe.h>
 
 #include "ntdll.h"
+#include "utlist.h"
 
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2 * !!(condition)]))
 

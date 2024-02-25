@@ -72,38 +72,45 @@
 
 #define K22_MALLOC_LENGTH(pVar, cbLength)                                                                              \
 	do {                                                                                                               \
-		pVar = HeapAlloc(GetProcessHeap(), 0, cbLength);                                                               \
+		pVar = malloc(cbLength);                                                                                       \
 		if (pVar == NULL)                                                                                              \
 			RETURN_K22_F_ERR("Couldn't allocate memory for " #pVar);                                                   \
 	} while (0)
 
 #define K22_CALLOC(pVar)                                                                                               \
 	do {                                                                                                               \
-		pVar = HeapAlloc(GetProcessHeap(), 0, sizeof(*pVar));                                                          \
+		pVar = malloc(sizeof(*pVar));                                                                                  \
 		if (pVar == NULL)                                                                                              \
 			RETURN_K22_F_ERR("Couldn't allocate memory for " #pVar);                                                   \
-		ZeroMemory(pVar, sizeof(*pVar));                                                                               \
+		memset(pVar, 0, sizeof(*pVar));                                                                                \
 	} while (0)
+
+#define K22_FREE(pVar) free(pVar)
 
 // Linked list macros
 
-#define K22_LL_APPEND(pType, pCurrent, ppNext)                                                                         \
-	do {                                                                                                               \
-		K22_CALLOC((*(pType *)ppNext));                                                                                \
-		(*(pType *)ppNext)->pPrev = pCurrent;                                                                          \
-		pCurrent				  = *(pType *)ppNext;                                                                  \
-		ppNext					  = &pCurrent->pNext;                                                                  \
-	} while (0)
+#define K22_LL_PREPEND(pHead, pElem)	  DL_PREPEND2(pHead, pElem, pPrev, pNext)
+#define K22_LL_APPEND(pHead, pElem)		  DL_APPEND2(pHead, pElem, pPrev, pNext)
+#define K22_LL_DELETE(pHead, pElem)		  DL_DELETE2(pHead, pElem, pPrev, pNext)
+#define K22_LL_FOREACH(pHead, pElem)	  DL_FOREACH2(pHead, pElem, pNext)
+#define K22_LL_FOREACH_SAFE(pHead, pElem) DL_FOREACH_SAFE2(pHead, pElem, pPrev, pNext)
 
-#define K22_LL_END(pType, pStart, pCurrent, ppNext)                                                                    \
+#define K22_LL_ALLOC_APPEND(pHead, pElem)                                                                              \
 	do {                                                                                                               \
-		ppNext	 = &pStart;                                                                                            \
-		pCurrent = pStart;                                                                                             \
-		while (*(pType *)ppNext) {                                                                                     \
-			pCurrent = *(pType *)ppNext;                                                                               \
-			ppNext	 = &pCurrent->pNext;                                                                               \
+		K22_CALLOC(pElem);                                                                                             \
+		K22_LL_APPEND(pHead, pElem);                                                                                   \
+	} while (0)
+#define K22_LL_ALLOC_PREPEND(pHead, pElem)                                                                             \
+	do {                                                                                                               \
+		K22_CALLOC(pElem);                                                                                             \
+		K22_LL_PREPEND(pHead, pElem);                                                                                  \
+	} while (0)
+#define K22_LL_FIND(pHead, pElem, cond)                                                                                \
+	do {                                                                                                               \
+		K22_LL_FOREACH(pHead, pElem) {                                                                                 \
+			if (cond)                                                                                                  \
+				break;                                                                                                 \
 		}                                                                                                              \
-                                                                                                                       \
 	} while (0)
 
 // Registry macros
@@ -125,11 +132,11 @@
 			RETURN_K22_F_ERR_VAL(dwError, "Couldn't read registry value '%s'", lpName);                                \
 	} while (0)
 
-#define K22_REG_ENUM_VALUE(hKey, szName, cbName, abValue, cbValue)                                                     \
+#define K22_REG_ENUM_VALUE(hKey, pName, cbName, pValue, cbValue)                                                       \
 	dwIndex = 0;                                                                                                       \
 	while (1)                                                                                                          \
-		if (cbName	= sizeof(szName) - 1,                                                                              \
-			cbValue = sizeof(abValue) - 1,                                                                             \
-			RegEnumValue(hKey, dwIndex++, szName, &cbName, NULL, NULL, (LPBYTE)abValue, &cbValue) != ERROR_SUCCESS)    \
+		if (cbName	= sizeof(pName) - 1,                                                                               \
+			cbValue = sizeof(pValue),                                                                                  \
+			RegEnumValue(hKey, dwIndex++, pName, &cbName, NULL, NULL, (LPBYTE)pValue, &cbValue) != ERROR_SUCCESS)      \
 			break;                                                                                                     \
 		else
