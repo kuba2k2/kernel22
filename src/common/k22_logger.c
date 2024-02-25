@@ -68,9 +68,9 @@ VOID K22LogWrite(
 		"\x1B[0m"
 #endif
 #if K22_LOGGER_FILE && K22_LOGGER_FUNCTION
-		"%s:%lu(%s): "
+		"%s:%3lu(%s): "
 #elif K22_LOGGER_FILE
-		"%s:%lu: "
+		"%s:%3lu: "
 #elif K22_LOGGER_FUNCTION
 		"%s: "
 #endif

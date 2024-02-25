@@ -26,7 +26,7 @@
 #endif
 
 #ifndef K22_LOGGER_COLOR
-#define K22_LOGGER_COLOR 1
+#define K22_LOGGER_COLOR 0
 #endif
 
 // Global loglevel
