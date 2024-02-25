@@ -45,8 +45,9 @@
 #endif
 
 #if K22_CORE
-#include "k22_core.h"
 #include "k22_data.h"
+
+#include "k22_core.h"
 #endif
 
 // k22_hexdump.c
