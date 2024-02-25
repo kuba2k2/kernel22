@@ -22,6 +22,7 @@ link_libraries(ntdll kernel32 version)
 include_directories("src/" "src/common/")
 add_compile_definitions("K22_BITS${K22_BITS}")
 
+add_subdirectory("src/dlls/" dlls)
 add_subdirectory("minhook/" minhook)
 
 add_library(core SHARED ${SRCS_CORE})
