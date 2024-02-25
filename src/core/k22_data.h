@@ -47,7 +47,8 @@ typedef struct K22_DLL_REWRITE {
 // WinVer
 
 typedef struct K22_WIN_VER_ENTRY {
-	LPSTR lpModuleName; // module name to match
+	LPSTR lpModuleName; // mode name to match
+	LPSTR lpModeName;	// mode name to match
 	DWORD dwMajor;		// major version number
 	DWORD dwMinor;		// minor version number
 	DWORD dwBuild;		// build number
@@ -56,9 +57,9 @@ typedef struct K22_WIN_VER_ENTRY {
 } K22_WIN_VER_ENTRY, *PK22_WIN_VER_ENTRY;
 
 typedef struct K22_WIN_VER {
-	DWORD fMode;				   // spoofing modes
-	K22_WIN_VER_ENTRY stDefault;   // default version to apply
-	PK22_WIN_VER_ENTRY pPerModule; // per-module version spoofing
+	DWORD fMode;				 // enabled spoofing modes
+	K22_WIN_VER_ENTRY stDefault; // default version to apply
+	PK22_WIN_VER_ENTRY pEntries; // per-module/per-mode version spoofing
 } K22_WIN_VER, *PK22_WIN_VER;
 
 // BinPatch

@@ -115,22 +115,41 @@
 
 // Registry macros
 
-#define K22_REG_ACCESS (KEY_READ | KEY_QUERY_VALUE)
+#define K22_REG_ACCESS KEY_READ
+
+#define K22_REG_VARS()                                                                                                 \
+	DWORD dwIndex, cbName, cbValue;                                                                                    \
+	TCHAR szName[256 + 1], szValue[256 + 1]
 
 #define K22_REG_REQUIRE_KEY(hParent, lpName, hChild)                                                                   \
 	do {                                                                                                               \
-		if (RegOpenKeyEx(hParent, lpName, 0, K22_REG_ACCESS, &hChild) != ERROR_SUCCESS)                                \
-			RETURN_K22_F_ERR("Couldn't open registry key '%s'", lpName);                                               \
+		DWORD dwError;                                                                                                 \
+		if ((dwError = RegOpenKeyEx(hParent, lpName, 0, K22_REG_ACCESS, &hChild)) != ERROR_SUCCESS)                    \
+			RETURN_K22_F_ERR_VAL(dwError, "Couldn't open registry key '%s'", lpName);                                  \
 	} while (0)
 
 #define K22_REG_OPEN_KEY(hParent, lpName, hChild)                                                                      \
 	(RegOpenKeyEx(hParent, lpName, 0, K22_REG_ACCESS, &hChild) == ERROR_SUCCESS)
 
-#define K22_REG_REQUIRE_VALUE(hKey, lpName, abValue, cbValue)                                                          \
+#define K22_REG_REQUIRE_VALUE(hKey, lpName, pValue, cbValue)                                                           \
 	do {                                                                                                               \
-		if ((dwError = RegGetValue(hKey, NULL, lpName, RRF_RT_ANY, NULL, (LPBYTE)abValue, &cbValue)) != ERROR_SUCCESS) \
+		DWORD dwError;                                                                                                 \
+		if (cbValue = sizeof(pValue),                                                                                  \
+			(dwError = RegGetValue(hKey, NULL, lpName, RRF_RT_ANY, NULL, (LPBYTE)pValue, &cbValue)) != ERROR_SUCCESS)  \
 			RETURN_K22_F_ERR_VAL(dwError, "Couldn't read registry value '%s'", lpName);                                \
 	} while (0)
+
+#define K22_REG_READ_VALUE(hKey, lpName, pValue, cbValue)                                                              \
+	(cbValue = sizeof(pValue),                                                                                         \
+	 RegGetValue(hKey, NULL, lpName, RRF_RT_ANY, NULL, (LPBYTE)pValue, &cbValue) == ERROR_SUCCESS)
+
+#define K22_REG_ENUM_KEY(hKey, pName, cbName)                                                                          \
+	dwIndex = 0;                                                                                                       \
+	while (1)                                                                                                          \
+		if (cbName = sizeof(pName) - 1,                                                                                \
+			RegEnumKeyEx(hKey, dwIndex++, pName, &cbName, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)                    \
+			break;                                                                                                     \
+		else
 
 #define K22_REG_ENUM_VALUE(hKey, pName, cbName, pValue, cbValue)                                                       \
 	dwIndex = 0;                                                                                                       \
