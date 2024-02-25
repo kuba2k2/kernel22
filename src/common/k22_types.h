@@ -5,16 +5,26 @@
 #include "kernel22.h"
 
 typedef struct {
-	DWORD Reserved1[7];	   // e_magic, ..., e_ovno
+	DWORD Reserved1[7]; // e_magic, ..., e_ovno
 
-	BYTE bCookie[3];	   // e_res[0], LOBYTE(e_res[1])
-	BYTE bSource;		   // HIBYTE(e_res[1])
+	BYTE bCookie[3];	// e_res[0], LOBYTE(e_res[1])
+	BYTE bSource;		// HIBYTE(e_res[1])
 
-	WORD wSymbolHint;	   // e_res[2]
-	CHAR szSymbolName[6];  // e_res[3], e_oemid, e_oeminfo
-	CHAR szModuleName[20]; // e_res2[0], ..., e_res2[10]
+	union {
+		// used during EXE loading phase
+		struct {
+			WORD wSymbolHint;	   // e_res[2]
+			CHAR szSymbolName[6];  // e_res[3], e_oemid, e_oeminfo
+			CHAR szModuleName[20]; // e_res2[0], ..., e_res2[10]
+			DWORD dwPeRva;		   // e_lfanew
+		};
 
-	DWORD dwPeRva;		   // e_lfanew
+		// used by the core on runtime (EXE and DLL)
+		struct {
+			DWORD dwCoreMagic;
+			LPVOID lpModuleData;
+		};
+	};
 
 	// DOS stub
 	IMAGE_IMPORT_DESCRIPTOR stOrigImportDescriptor[2];
@@ -31,6 +41,8 @@ typedef struct {
 
 #define K22_CORE_DLL	"K22Core.dll"
 #define K22_LOAD_SYMBOL "DllLd"
+
+#define K22_CORE_MAGIC 0x0032324b
 
 static VOID BuildBugCheck() {
 	BUILD_BUG_ON(sizeof(IMAGE_K22_HEADER) != 120);

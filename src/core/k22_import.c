@@ -33,20 +33,16 @@ BOOL K22ImportTableRestore(LPVOID lpImageBase) {
 }
 
 BOOL K22ProcessImports(LPVOID lpImageBase) {
-	DWORD dwOldProtect;
+	PK22_MODULE_DATA pK22ModuleData = K22DataGetModule(lpImageBase);
 
-	PIMAGE_DOS_HEADER pDosHeader = RVA(0);
-#if K22_BITS64
-	PIMAGE_NT_HEADERS64 pNt = RVA(pDosHeader->e_lfanew);
-#elif K22_BITS32
-	PIMAGE_NT_HEADERS32 pNt = RVA(pDosHeader->e_lfanew);
-#endif
+	K22_I("Processing imports of %p (%s)", lpImageBase, pK22ModuleData->lpModuleName);
 
 	// get import directory
-	DWORD dwImportDirectoryRva = K22_NT_DATA_RVA(pK22Data->pNt, IMAGE_DIRECTORY_ENTRY_IMPORT);
+	DWORD dwImportDirectoryRva = K22_NT_DATA_RVA(pK22ModuleData->pNt, IMAGE_DIRECTORY_ENTRY_IMPORT);
 	if (dwImportDirectoryRva == 0)
 		RETURN_K22_F("Image does not import any DLLs! (no import directory)");
 
+	DWORD dwOldProtect;
 	PIMAGE_IMPORT_DESCRIPTOR pImportDesc = RVA(dwImportDirectoryRva);
 	for (/**/; pImportDesc->FirstThunk; pImportDesc++) {
 		K22_D(

@@ -14,6 +14,9 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
 	K22_I("Load Source: %c", pK22Header->bSource);
 	K22_I("Process Name: %s", pK22Data->lpProcessName);
 
+	// print loaded modules
+	K22DebugPrintModules();
+
 	// read configuration from registry
 	K22_I("Reading configuration");
 	if (!K22DataReadConfig())

@@ -9,14 +9,27 @@ static BOOL K22DataReadDllRedirect(HKEY hDllRedirect);
 static BOOL K22DataReadDllRewrite(HKEY hDllRewrite);
 static BOOL K22DataReadWinVer(HKEY hWinVer);
 
-BOOL K22DataInitialize(PIMAGE_K22_HEADER pK22Header) {
+PK22_DATA K22DataGet() {
+	if (pK22Data == NULL && !K22DataInitialize(GetModuleHandle(NULL)))
+		return NULL;
+	return pK22Data;
+}
+
+PK22_MODULE_DATA K22DataGetModule(LPVOID lpImageBase) {
+	PIMAGE_K22_HEADER pK22Header = K22_DOS_HDR_DATA(lpImageBase);
+	if (pK22Header->dwCoreMagic != K22_CORE_MAGIC && !K22DataInitializeModule(lpImageBase))
+		return NULL;
+	return pK22Header->lpModuleData;
+}
+
+BOOL K22DataInitialize(LPVOID lpImageBase) {
 	if (pK22Data == NULL)
 		K22_CALLOC(pK22Data);
 
-	pK22Data->pK22Header = pK22Header;
-	pK22Data->pNt		 = (PIMAGE_NT_HEADERS3264)((ULONG_PTR)pK22Data->lpProcessBase + pK22Data->pDosHeader->e_lfanew);
-	pK22Data->pPeb		 = NtCurrentPeb();
-	pK22Data->fIs64Bit	 = pK22Data->pNt->stFile.Machine == IMAGE_FILE_MACHINE_AMD64;
+	pK22Data->lpProcessBase = lpImageBase;
+	pK22Data->pNt			= RVA(pK22Data->pDosHeader->e_lfanew);
+	pK22Data->pPeb			= NtCurrentPeb();
+	pK22Data->fIs64Bit		= pK22Data->pNt->stFile.Machine == IMAGE_FILE_MACHINE_AMD64;
 
 	K22_MALLOC_LENGTH(pK22Data->lpProcessPath, MAX_PATH + 1);
 	GetModuleFileName(NULL, pK22Data->lpProcessPath, MAX_PATH + 1);
@@ -46,6 +59,39 @@ BOOL K22DataInitialize(PIMAGE_K22_HEADER pK22Header) {
 		K22_D("Per-app configuration key found");
 	}
 
+	return TRUE;
+}
+
+BOOL K22DataInitializeModule(LPVOID lpImageBase) {
+	PIMAGE_K22_HEADER pK22Header = K22_DOS_HDR_DATA(lpImageBase);
+
+	PK22_MODULE_DATA pK22ModuleData;
+	K22_CALLOC(pK22ModuleData);
+
+	pK22ModuleData->pDosHeader = RVA(0);
+	pK22ModuleData->pNt		   = RVA(pK22ModuleData->pDosHeader->e_lfanew);
+
+	// find the module path and base name
+	K22_LDR_ENUM(pLdrEntry) {
+		if (pLdrEntry->DllBase == lpImageBase) {
+			ANSI_STRING stName;
+			// convert to ANSI, then to lowercase and store in module data
+			RtlUnicodeStringToAnsiString(&stName, &pLdrEntry->FullDllName, TRUE);
+			_strlwr(stName.Buffer);
+			pK22ModuleData->lpModulePath = stName.Buffer;
+			// same for module name
+			RtlUnicodeStringToAnsiString(&stName, &pLdrEntry->BaseDllName, TRUE);
+			_strlwr(stName.Buffer);
+			pK22ModuleData->lpModuleName = stName.Buffer;
+			break;
+		}
+	}
+
+	DWORD dwOldProtect;
+	if (!K22UnlockMemory(*pK22Header))
+		RETURN_K22_F_ERR("Couldn't unlock DOS header");
+	pK22Header->dwCoreMagic	 = K22_CORE_MAGIC;
+	pK22Header->lpModuleData = pK22ModuleData;
 	return TRUE;
 }
 

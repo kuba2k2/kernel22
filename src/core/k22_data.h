@@ -94,4 +94,18 @@ typedef struct {
 	} stConfig;
 } K22_DATA, *PK22_DATA;
 
+typedef struct {
+	union {
+		LPVOID lpModuleBase;
+		PIMAGE_DOS_HEADER pDosHeader;
+	};
+
+	PIMAGE_NT_HEADERS3264 pNt;
+
+	LPSTR lpModulePath;
+	LPSTR lpModuleName;
+} K22_MODULE_DATA, *PK22_MODULE_DATA;
+
+#if K22_CORE
 extern PK22_DATA pK22Data;
+#endif

@@ -34,3 +34,51 @@ BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR
 	}
 	return K22StringDupFileName(lpInput, cchInput, ppOutput);
 }
+
+VOID K22DebugPrintModules() {
+	K22_LDR_ENUM(pLdrEntry) {
+		LPSTR lpReason = NULL;
+		switch (pLdrEntry->LoadReason) {
+			case LoadReasonStaticDependency:
+				lpReason = "LoadReasonStaticDependency";
+				break;
+			case LoadReasonStaticForwarderDependency:
+				lpReason = "LoadReasonStaticForwarderDependency";
+				break;
+			case LoadReasonDynamicForwarderDependency:
+				lpReason = "LoadReasonDynamicForwarderDependency";
+				break;
+			case LoadReasonDelayloadDependency:
+				lpReason = "LoadReasonDelayloadDependency";
+				break;
+			case LoadReasonDynamicLoad:
+				lpReason = "LoadReasonDynamicLoad";
+				break;
+			case LoadReasonAsImageLoad:
+				lpReason = "LoadReasonAsImageLoad";
+				break;
+			case LoadReasonAsDataLoad:
+				lpReason = "LoadReasonAsDataLoad";
+				break;
+			case LoadReasonEnclavePrimary:
+				lpReason = "LoadReasonEnclavePrimary";
+				break;
+			case LoadReasonEnclaveDependency:
+				lpReason = "LoadReasonEnclaveDependency";
+				break;
+			case LoadReasonUnknown:
+				lpReason = "LoadReasonUnknown";
+				break;
+			default:
+				lpReason = "???";
+				break;
+		}
+		K22_D(
+			"DLL @ %p: %ls - %s (%d)",
+			pLdrEntry->DllBase,
+			pLdrEntry->BaseDllName.Buffer,
+			lpReason,
+			pLdrEntry->LoadReason
+		);
+	}
+}
