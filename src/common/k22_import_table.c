@@ -116,17 +116,17 @@ BOOL K22ImportTablePatchImage(BYTE bSource, LPVOID lpImageBase) {
 	// get DOS header as K22 header
 	PIMAGE_K22_HEADER pK22Header = (PIMAGE_K22_HEADER)lpImageBase;
 	// get NT header
-	PIMAGE_NT_HEADERS3264 pNt = (PIMAGE_NT_HEADERS3264)RVA(pK22Header->dwPeRva);
+	PIMAGE_NT_HEADERS3264 pNt = RVA(pK22Header->dwPeRva);
 	// get import directory
 	DWORD dwImportDirectoryRva = K22_NT_DATA_RVA(pNt, IMAGE_DIRECTORY_ENTRY_IMPORT);
 	if (dwImportDirectoryRva == 0)
 		RETURN_K22_F("Image does not import any DLLs! (no import directory)");
-	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)RVA(dwImportDirectoryRva);
+	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor = RVA(dwImportDirectoryRva);
 	// get first thunk
 	DWORD dwFirstThunkRva = pImportDescriptor[0].FirstThunk;
 	if (dwFirstThunkRva == 0)
 		RETURN_K22_F("Image does not import any DLLs! (no first thunk)");
-	PULONG_PTR pFirstThunk = (PULONG_PTR)RVA(dwFirstThunkRva);
+	PULONG_PTR pFirstThunk = RVA(dwFirstThunkRva);
 
 	// unlock DOS header
 	if (!K22UnlockMemory(*pK22Header))

@@ -57,8 +57,8 @@
 
 #define K22_NT_DATA_RVA(pNt, eEntry)                                                                                   \
 	(((pNt)->stNt64.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC                                              \
-		  ? (pNt)->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT]                                   \
-		  : (pNt)->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT])                                  \
+		  ? (pNt)->stNt64.OptionalHeader.DataDirectory[eEntry]                                                         \
+		  : (pNt)->stNt32.OptionalHeader.DataDirectory[eEntry])                                                        \
 		 .VirtualAddress)
 
 // Memory allocation macros

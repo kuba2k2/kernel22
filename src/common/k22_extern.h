@@ -42,6 +42,5 @@ typedef VOID(CALLBACK *PLDR_DLL_NOTIFICATION_FUNCTION)(
 	ULONG NotificationReason, PLDR_DLL_NOTIFICATION_DATA NotificationData, PVOID Context
 );
 
-typedef NTSTATUS(NTAPI *_LdrRegisterDllNotification)(
-	ULONG Flags, PLDR_DLL_NOTIFICATION_FUNCTION NotificationFunction, PVOID Context, PVOID *Cookie
-);
+NTSTATUS(NTAPI *LdrRegisterDllNotification)
+(ULONG Flags, PLDR_DLL_NOTIFICATION_FUNCTION NotificationFunction, PVOID Context, PVOID *Cookie);
