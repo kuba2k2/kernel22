@@ -17,7 +17,7 @@ BOOL K22DataDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput) {
 	if (lpInput[0] != '@')
 		return K22DataDupString(lpInput, cchInput, ppOutput);
 	lpInput++; // skip the @ character; cchInput now accounts for the NULL terminator
-	DWORD cchInstallDir = pK22Data->stConfig.cbInstallDir - 1;
+	DWORD cchInstallDir = pK22Data->stConfig.cchInstallDir;
 	K22_MALLOC_LENGTH(*ppOutput, cchInstallDir + cchInput);
 	memcpy(*ppOutput, pK22Data->stConfig.lpInstallDir, cchInstallDir);
 	memcpy(*ppOutput + cchInstallDir, lpInput, cchInput);

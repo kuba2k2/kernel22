@@ -11,11 +11,11 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
 	K22_I("Load Source: %c", pK22Header->bSource);
 	K22_I("Process Name: %s", pK22Data->lpProcessName);
 
-	if (MH_Initialize() != MH_OK)
-		RETURN_K22_F("Couldn't initialize MinHook");
-
 	if (!K22DataReadConfig())
 		return FALSE;
+
+	if (MH_Initialize() != MH_OK)
+		RETURN_K22_F("Couldn't initialize MinHook");
 
 	return TRUE;
 }

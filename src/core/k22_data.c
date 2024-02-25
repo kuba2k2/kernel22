@@ -16,6 +16,7 @@ BOOL K22DataInitialize(PIMAGE_K22_HEADER pK22Header) {
 	pK22Data->pK22Header = pK22Header;
 	pK22Data->pNt		 = (PIMAGE_NT_HEADERS3264)((ULONG_PTR)pK22Data->lpProcessBase + pK22Data->pDosHeader->e_lfanew);
 	pK22Data->pPeb		 = NtCurrentPeb();
+	pK22Data->fIs64Bit	 = pK22Data->pNt->stFile.Machine == IMAGE_FILE_MACHINE_AMD64;
 
 	K22_MALLOC_LENGTH(pK22Data->lpProcessPath, MAX_PATH + 1);
 	GetModuleFileName(NULL, pK22Data->lpProcessPath, MAX_PATH + 1);
@@ -42,7 +43,7 @@ BOOL K22DataInitialize(PIMAGE_K22_HEADER pK22Header) {
 		K22_D("Per-app configuration key not found");
 		pK22Data->stReg.hConfig[1] = NULL;
 	} else {
-		K22_D("Per-app configuration key opened");
+		K22_D("Per-app configuration key found");
 	}
 
 	return TRUE;
@@ -52,8 +53,17 @@ BOOL K22DataReadConfig() {
 	K22_REG_VARS();
 
 	K22_REG_REQUIRE_VALUE(pK22Data->stReg.hMain, "InstallDir", szValue, cbValue);
-	pK22Data->stConfig.lpInstallDir = _strdup(szValue);
-	pK22Data->stConfig.cbInstallDir = cbValue;
+	cbValue--; // skip the NULL terminator
+	if (szValue[cbValue - 1] != '\\') {
+		szValue[cbValue++] = '\\';
+	}
+	if (pK22Data->fIs64Bit)
+		strcpy(szValue + cbValue, "DLL_64\\");
+	else
+		strcpy(szValue + cbValue, "DLL_32\\");
+	cbValue += 7;
+	pK22Data->stConfig.lpInstallDir	 = _strdup(szValue);
+	pK22Data->stConfig.cchInstallDir = cbValue;
 
 	for (PHKEY pConfig = pK22Data->stReg.hConfig; pConfig < pK22Data->stReg.hConfig + 2; pConfig++) {
 		HKEY hConfig = *pConfig;

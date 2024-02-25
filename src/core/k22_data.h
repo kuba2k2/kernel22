@@ -75,6 +75,7 @@ typedef struct {
 	PIMAGE_NT_HEADERS3264 pNt;
 
 	PPEB pPeb;
+	BOOL fIs64Bit;
 	LPSTR lpProcessPath;
 	LPSTR lpProcessName;
 
@@ -85,7 +86,7 @@ typedef struct {
 
 	struct {
 		LPSTR lpInstallDir;
-		SIZE_T cbInstallDir;
+		SIZE_T cchInstallDir;
 		PK22_DLL_EXTRA pDllExtra;
 		PK22_DLL_REDIRECT pDllRedirect;
 		PK22_DLL_REWRITE pDllRewrite;
