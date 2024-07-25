@@ -50,11 +50,6 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 	if (dwImportDirectoryRva == 0)
 		RETURN_K22_F("Image does not import any DLLs! (no import directory)");
 
-	// disable the import directory, so that ntdll.dll doesn't use it anymore
-	if (!K22UnlockMemory(pImportDirectoryRva))
-		RETURN_K22_F_ERR("Couldn't unlock import directory RVA @ %p", pImportDirectoryRva);
-	*pImportDirectoryRva = 0;
-
 	// process each import descriptor
 	PIMAGE_IMPORT_DESCRIPTOR pImportDesc = RVA(dwImportDirectoryRva);
 	for (/**/; pImportDesc->FirstThunk; pImportDesc++) {
@@ -96,17 +91,22 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 				);
 			}
 
-			if (*pThunk != *pOrigThunk) {
-				K22_E(" - thunk already processed!");
-				continue;
-			}
-
 			if (pProcAddress == 0) {
 				RETURN_K22_F_ERR("Couldn't find symbol in module %s", RVA(pImportDesc->Name));
 			}
 
+			// snap even if (pThunk != pOrigThunk)
+			// while it may look like snapped already, it's not always the case
+			// see: VERSION.DLL which has kind-of-pre-snapped thunks
 			*pThunk = (ULONG_PTR)pProcAddress;
 		}
+
+		// disable the import descriptor, so that ntdll.dll doesn't use it anymore
+		// otherwise it would re-snap all thunks after the DLL notification callback
+		if (!K22UnlockMemory(*pImportDesc))
+			RETURN_K22_F_ERR("Couldn't unlock import descriptor @ %p", pImportDesc);
+		pImportDesc->FirstThunk			= 0;
+		pImportDesc->OriginalFirstThunk = 0;
 	}
 
 	return TRUE;

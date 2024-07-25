@@ -25,9 +25,9 @@
 
 // Memory macros
 
-#define K22UnlockMemory(vIn)				  VirtualProtect(&vIn, sizeof(vIn), PAGE_READWRITE, &dwOldProtect)
-#define K22UnlockMemoryLength(pvIn, cbLength) VirtualProtect(pvIn, cbLength, PAGE_READWRITE, &dwOldProtect)
-#define K22UnlockMemoryArray(pvIn)			  VirtualProtect(pvIn, sizeof(pvIn), PAGE_READWRITE, &dwOldProtect)
+#define K22UnlockMemory(vIn)				  VirtualProtect((PVOID)&vIn, sizeof(vIn), PAGE_READWRITE, &dwOldProtect)
+#define K22UnlockMemoryLength(pvIn, cbLength) VirtualProtect((PVOID)pvIn, cbLength, PAGE_READWRITE, &dwOldProtect)
+#define K22UnlockMemoryArray(pvIn)			  VirtualProtect((PVOID)pvIn, sizeof(pvIn), PAGE_READWRITE, &dwOldProtect)
 
 // File macros
 

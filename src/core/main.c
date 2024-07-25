@@ -17,7 +17,8 @@ static BOOL DllInitialize(HANDLE hDll) {
 }
 
 static VOID DllError() {
-	MessageBox(0, "Couldn't initialize K22 Core DLL", "Error", MB_ICONERROR);
+	// MessageBox(0, "Couldn't initialize K22 Core DLL", "Error", MB_ICONERROR);
+	K22_F("Couldn't initialize K22 Core DLL");
 }
 
 #pragma warning(push)
