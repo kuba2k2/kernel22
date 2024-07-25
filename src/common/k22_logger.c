@@ -34,6 +34,37 @@ static TCHAR adwColors[] = {
 };
 #endif
 
+static VOID K22OutputString(LPCSTR lpMessage) {
+#if K22_LOG_OUTPUT_DEBUG_STRING
+	OutputDebugString(lpMessage);
+#endif
+#if !K22_VERIFIER
+	printf("%s", lpMessage);
+#endif
+}
+
+static DWORD K22VPrintf(LPCSTR lpFormat, va_list Args) {
+	static int (*nt_vsnprintf)(char *Dest, size_t Count, const char *Format, va_list Args) = NULL;
+	static CHAR pMessageBuffer[1024];
+
+	if (nt_vsnprintf == NULL) {
+		HMODULE hNtdll = GetModuleHandle("ntdll.dll");
+		nt_vsnprintf   = (void *)GetProcAddress(hNtdll, "_vsnprintf");
+	}
+
+	DWORD cbMessage = nt_vsnprintf(pMessageBuffer, sizeof(pMessageBuffer), lpFormat, Args);
+	K22OutputString(pMessageBuffer);
+	return cbMessage;
+}
+
+static DWORD K22Printf(LPCSTR lpFormat, ...) {
+	va_list va_args;
+	va_start(va_args, lpFormat);
+	DWORD dwMessage = K22VPrintf(lpFormat, va_args);
+	va_end(va_args);
+	return dwMessage;
+}
+
 VOID K22LogWrite(
 	DWORD dwLevel, LPCSTR lpFile, DWORD dwLine, LPCSTR lpFunction, DWORD dwWin32Error, LPCSTR lpFormat, ...
 ) {
@@ -43,19 +74,23 @@ VOID K22LogWrite(
 #endif
 
 #if K22_LOGGER_TIMESTAMP
-	SYSTEMTIME SystemTime;
+	SYSTEMTIME SystemTime = {2000, 1, 1, 1, 0, 0, 0, 0};
+#if !K22_VERIFIER
+	// for some reason this never exits if used in verifier
 	GetLocalTime(&SystemTime);
+#endif
 #endif
 
 #if K22_LOGGER_FILE
 	{
-		LPCSTR lpFileEnd = lpFile + strlen(lpFile);
+		LPCSTR lpFileEnd = lpFile;
+		while (*(++lpFileEnd) != '\0') {}
 		while (*(--lpFileEnd) != '\\') {}
 		lpFile = lpFileEnd + 1;
 	}
 #endif
 
-	int cbMessagePrefix = printf(
+	DWORD cbMessagePrefix = K22Printf(
 	// format:
 #if K22_LOGGER_COLOR
 		"\x1B[%c;3%cm"
@@ -104,10 +139,9 @@ VOID K22LogWrite(
 
 	va_list va_args;
 	va_start(va_args, lpFormat);
-	vprintf(lpFormat, va_args);
+	K22VPrintf(lpFormat, va_args);
 	va_end(va_args);
-	//	putchar('\r');
-	putchar('\n');
+	K22OutputString("\n");
 
 	if (dwWin32Error == ERROR_SUCCESS)
 		return;
@@ -145,7 +179,7 @@ VOID K22LogWrite(
 		}
 	}
 
-	printf("%*c====> CODE: %s (0x%08lx)\n", cbMessagePrefix, ' ', lpMessage, dwWin32Error);
+	K22Printf("%*c====> CODE: %s (0x%08lx)\n", cbMessagePrefix, ' ', lpMessage, dwWin32Error);
 
 	if (dwWin32Error != STATUS_BREAKPOINT) {
 		LocalFree(lpMessage);

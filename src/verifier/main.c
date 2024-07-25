@@ -39,8 +39,10 @@ BOOL APIENTRY DllMain(HANDLE hDll, DWORD dwReason, PRTL_VERIFIER_PROVIDER_DESCRI
 	if (dwReason != DLL_PROCESS_VERIFIER) {
 		return TRUE;
 	}
+	K22_I("Verifier entry point called with dwReason=%lu, ppProvider=%p", dwReason, ppProvider);
 	// set the verifier provider descriptor
-	*ppProvider = &stProvider;
+	if (ppProvider)
+		*ppProvider = &stProvider;
 	// patch the current process
 	return K22ImportTablePatchImage(K22_SOURCE_VERIFIER, NtCurrentPeb()->ImageBaseAddress);
 }

@@ -40,10 +40,6 @@
 #include "k22_loader.h"
 #endif
 
-#if K22_VERIFIER
-#define K22LogWrite(...)
-#endif
-
 #if K22_CORE
 #include "k22_data.h"
 

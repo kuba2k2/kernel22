@@ -29,9 +29,13 @@
 #define K22_LOGGER_COLOR 0
 #endif
 
-// Global loglevel
+// Logger options
 #ifndef K22_LOGLEVEL
 #define K22_LOGLEVEL K22_LEVEL_DEBUG
+#endif
+
+#ifndef K22_LOG_OUTPUT_DEBUG_STRING
+#define K22_LOG_OUTPUT_DEBUG_STRING 1
 #endif
 
 // Loader configuration
