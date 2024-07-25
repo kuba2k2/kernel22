@@ -82,9 +82,9 @@ static BOOL K22ConfigReadDllExtra(HKEY hDllExtra) {
 		} else {
 			// K22_D(" - DLL Extra: will replace '%s'", pDllExtra->lpKey);
 		}
-		if (!K22StringDupFileName(szValue, cbValue - 1, &pDllExtra->lpFileName))
+		if (!K22StringDupFileName(szValue, cbValue - 1, &pDllExtra->lpTargetDll))
 			return FALSE;
-		K22_D(" - DLL Extra: setting '%s' (%s)", pDllExtra->lpKey, pDllExtra->lpFileName);
+		K22_D(" - DLL Extra: setting '%s' (%s)", pDllExtra->lpKey, pDllExtra->lpTargetDll);
 	}
 	return TRUE;
 }
@@ -98,18 +98,18 @@ static BOOL K22ConfigReadDllRedirect(HKEY hDllRedirect) {
 			pK22Data->stConfig.pDllRedirect,
 			pDllRedirect,
 			// comparison
-			strcmp(szName, pDllRedirect->lpModuleName) == 0
+			strcmp(szName, pDllRedirect->lpSourceDll) == 0
 		);
 		if (pDllRedirect == NULL) {
 			K22_LL_ALLOC_APPEND(pK22Data->stConfig.pDllRedirect, pDllRedirect);
-			if (!K22StringDup(szName, cbName, &pDllRedirect->lpModuleName))
+			if (!K22StringDup(szName, cbName, &pDllRedirect->lpSourceDll))
 				return FALSE;
 		} else {
 			// K22_D(" - DLL Redirect: will replace %s", pDllRedirect->lpModuleName);
 		}
-		if (!K22StringDupFileName(szValue, cbValue - 1, &pDllRedirect->lpFileName))
+		if (!K22StringDupFileName(szValue, cbValue - 1, &pDllRedirect->lpTargetDll))
 			return FALSE;
-		K22_D(" - DLL Redirect: setting %s -> %s", pDllRedirect->lpModuleName, pDllRedirect->lpFileName);
+		K22_D(" - DLL Redirect: setting %s -> %s", pDllRedirect->lpSourceDll, pDllRedirect->lpTargetDll);
 	}
 	return TRUE;
 }
@@ -123,11 +123,11 @@ static BOOL K22ConfigReadDllRewrite(HKEY hDllRewrite) {
 			pK22Data->stConfig.pDllRewrite,
 			pDllRewrite,
 			// comparison
-			strcmp(szName, pDllRewrite->lpModuleName) == 0
+			strcmp(szName, pDllRewrite->lpSourceDll) == 0
 		);
 		if (pDllRewrite == NULL) {
 			K22_LL_ALLOC_APPEND(pK22Data->stConfig.pDllRewrite, pDllRewrite);
-			if (!K22StringDup(szName, cbName, &pDllRewrite->lpModuleName))
+			if (!K22StringDup(szName, cbName, &pDllRewrite->lpSourceDll))
 				return FALSE;
 		}
 		HKEY hDllRewriteItem;
@@ -135,12 +135,12 @@ static BOOL K22ConfigReadDllRewrite(HKEY hDllRewrite) {
 		if (K22_REG_READ_VALUE(hDllRewriteItem, NULL, szValue, cbValue)) {
 			if (!K22StringDupFileName(szValue, cbValue - 1, &pDllRewrite->pDefault))
 				return FALSE;
-			K22_D(" - DLL Rewrite: setting %s!* (missing) -> %s", pDllRewrite->lpModuleName, pDllRewrite->pDefault);
+			K22_D(" - DLL Rewrite: setting %s!* (missing) -> %s", pDllRewrite->lpSourceDll, pDllRewrite->pDefault);
 		}
 		if (K22_REG_READ_VALUE(hDllRewriteItem, "*", szValue, cbValue)) {
 			if (!K22StringDupFileName(szValue, cbValue - 1, &pDllRewrite->pCatchAll))
 				return FALSE;
-			K22_D(" - DLL Rewrite: setting %s!* (all) -> %s", pDllRewrite->lpModuleName, pDllRewrite->pCatchAll);
+			K22_D(" - DLL Rewrite: setting %s!* (all) -> %s", pDllRewrite->lpSourceDll, pDllRewrite->pCatchAll);
 		}
 		K22_REG_ENUM_VALUE(hDllRewriteItem, szName, cbName, szValue, cbValue) {
 			if (szName[0] == '\0' || szName[0] == '*') // skip Default and Catch-All values
@@ -159,13 +159,13 @@ static BOOL K22ConfigReadDllRewrite(HKEY hDllRewrite) {
 			} else {
 				// K22_D(" - DLL Rewrite: will replace %s!%s", pDllRewrite->lpModuleName, pSymbol->lpSourceSymbol);
 			}
-			if (!K22StringDupDllTarget(szValue, cbValue - 1, &pSymbol->lpFileName, &pSymbol->lpTargetSymbol))
+			if (!K22StringDupDllTarget(szValue, cbValue - 1, &pSymbol->lpTargetDll, &pSymbol->lpTargetSymbol))
 				return FALSE;
 			K22_D(
 				" - DLL Rewrite: setting %s!%s -> %s!%s",
-				pDllRewrite->lpModuleName,
+				pDllRewrite->lpSourceDll,
 				pSymbol->lpSourceSymbol,
-				pSymbol->lpFileName,
+				pSymbol->lpTargetDll,
 				pSymbol->lpTargetSymbol ? pSymbol->lpTargetSymbol : pSymbol->lpSourceSymbol
 			);
 		}

@@ -44,7 +44,6 @@
 #if K22_CORE
 #include "k22_config.h"
 #include "k22_core.h"
-#include "k22_data.h"
 #endif
 
 // k22_hexdump.c

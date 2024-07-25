@@ -7,8 +7,8 @@
 // DllExtra
 
 typedef struct K22_DLL_EXTRA {
-	LPSTR lpKey;	  // arbitrary name of this entry
-	LPSTR lpFileName; // name of DLL to load
+	LPSTR lpKey;	   // arbitrary name of this entry
+	LPSTR lpTargetDll; // name of DLL to load
 	struct K22_DLL_EXTRA *pPrev;
 	struct K22_DLL_EXTRA *pNext;
 } K22_DLL_EXTRA, *PK22_DLL_EXTRA;
@@ -16,8 +16,8 @@ typedef struct K22_DLL_EXTRA {
 // DllRedirect
 
 typedef struct K22_DLL_REDIRECT {
-	LPSTR lpModuleName; // source DLL
-	LPSTR lpFileName;	// target DLL
+	LPSTR lpSourceDll; // source DLL
+	LPSTR lpTargetDll; // target DLL
 	struct K22_DLL_REDIRECT *pPrev;
 	struct K22_DLL_REDIRECT *pNext;
 } K22_DLL_REDIRECT, *PK22_DLL_REDIRECT;
@@ -26,14 +26,14 @@ typedef struct K22_DLL_REDIRECT {
 
 typedef struct K22_DLL_REWRITE_SYMBOL {
 	LPSTR lpSourceSymbol; // source symbol to match
-	LPSTR lpFileName;	  // target DLL
+	LPSTR lpTargetDll;	  // target DLL
 	LPSTR lpTargetSymbol; // optional, symbol to redirect to (same as source if unset)
 	struct K22_DLL_REWRITE_SYMBOL *pPrev;
 	struct K22_DLL_REWRITE_SYMBOL *pNext;
 } K22_DLL_REWRITE_SYMBOL, *PK22_DLL_REWRITE_SYMBOL;
 
 typedef struct K22_DLL_REWRITE {
-	LPSTR lpModuleName;				  // source DLL
+	LPSTR lpSourceDll;				  // source DLL
 	LPSTR pDefault;					  // optional, target DLL for missing symbols
 	LPSTR pCatchAll;				  // optional, target DLL for all symbols
 	PK22_DLL_REWRITE_SYMBOL pSymbols; // list of specific symbols to rewrite
@@ -47,8 +47,8 @@ typedef struct K22_DLL_REWRITE {
 // WinVer
 
 typedef struct K22_WIN_VER_ENTRY {
-	LPSTR lpModuleName; // mode name to match
-	LPSTR lpModeName;	// mode name to match
+	LPSTR lpModuleName; // module name to match
+	LPSTR lpModeName;	// spoofing mode to match
 	DWORD dwMajor;		// major version number
 	DWORD dwMinor;		// minor version number
 	DWORD dwBuild;		// build number
