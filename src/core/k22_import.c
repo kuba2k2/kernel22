@@ -47,8 +47,10 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 		&pK22ModuleData->pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
 #endif
 	DWORD dwImportDirectoryRva = *pImportDirectoryRva;
-	if (dwImportDirectoryRva == 0)
-		RETURN_K22_F("Image does not import any DLLs! (no import directory)");
+	if (dwImportDirectoryRva == 0) {
+		K22_I("Image does not import any DLLs (no import directory)");
+		return TRUE;
+	}
 
 	// process each import descriptor
 	PIMAGE_IMPORT_DESCRIPTOR pImportDesc = RVA(dwImportDirectoryRva);

@@ -82,7 +82,7 @@ VOID K22LogWrite(
 #endif
 
 #if K22_LOGGER_FILE
-	{
+	if (lpFile) {
 		LPCSTR lpFileEnd = lpFile;
 		while (*(++lpFileEnd) != '\0') {}
 		while (*(--lpFileEnd) != '\\') {}
