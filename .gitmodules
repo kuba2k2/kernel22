@@ -1,6 +1,6 @@
 [submodule "minhook"]
-	path = minhook
+	path = lib/minhook
 	url = https://github.com/m417z/minhook
 [submodule "uthash"]
-	path = uthash
+	path = lib/uthash
 	url = https://github.com/troydhanson/uthash
