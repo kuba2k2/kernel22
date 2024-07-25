@@ -45,15 +45,21 @@ void verifyVersionInfoMethod() {
 	osvi.dwBuildNumber	= 7601;
 
 	// Prepare condition mask
-	VER_SET_CONDITION(conditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
-	VER_SET_CONDITION(conditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
-	VER_SET_CONDITION(conditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+	VER_SET_CONDITION(conditionMask, VER_MAJORVERSION, VER_EQUAL);
+	VER_SET_CONDITION(conditionMask, VER_MINORVERSION, VER_EQUAL);
+	VER_SET_CONDITION(conditionMask, VER_BUILDNUMBER, VER_EQUAL);
 
 	// Perform the check
 	if (VerifyVersionInfo(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER, conditionMask)) {
 		printWindowsVersion("VerifyVersionInfo", osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber);
 	} else {
-		printf("VerifyVersionInfo: Not 6.1.7601\n");
+		printf(
+			"Windows Version - %-28s = Not %d.%d.%d\n",
+			"VerifyVersionInfo",
+			osvi.dwMajorVersion,
+			osvi.dwMinorVersion,
+			osvi.dwBuildNumber
+		);
 	}
 }
 

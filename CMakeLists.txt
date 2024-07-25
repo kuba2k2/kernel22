@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
+
 project(kernel)
 
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -8,52 +9,27 @@ elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
 endif ()
 
 set(CMAKE_CXX_STANDARD 17)
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/K22_${K22_BITS}")
-
-file(GLOB SRCS_CORE "src/common/*.c" "src/core/*.c")
-file(GLOB SRCS_LOADER "src/loader/*.c")
-file(GLOB SRCS_PATCHER "src/patcher/*.c")
-file(GLOB SRCS_VERIFIER "src/verifier/*.c" "src/common/k22_import_table.c")
-file(GLOB SRCS_EXAMPLE "example/*.c")
 
 add_link_options(/INCREMENTAL:NO)
 link_libraries(ntdll kernel32 version)
-include_directories("src/" "src/common/")
-add_compile_definitions("K22_BITS${K22_BITS}")
 
-add_subdirectory("src/dlls/")
-add_subdirectory("lib/minhook/")
-include_directories("lib/uthash/src/")
+add_subdirectory("lib/")
+add_subdirectory("src/")
+add_subdirectory("example/")
+add_subdirectory("dlls/")
 
-add_library(core SHARED ${SRCS_CORE})
-target_link_libraries(core PRIVATE minhook)
-target_include_directories(core PRIVATE "src/core/")
-target_compile_definitions(core PRIVATE K22_CORE=1)
-set_target_properties(core PROPERTIES OUTPUT_NAME "K22Core")
+function(print_all_targets DIR)
+	get_property(TARGETS DIRECTORY "${DIR}" PROPERTY BUILDSYSTEM_TARGETS)
+	foreach (TARGET IN LISTS TARGETS)
+		string(REPLACE "${CMAKE_CURRENT_LIST_DIR}" "" RELDIR "${DIR}")
+		message(STATUS "Target: ${TARGET} | .${RELDIR}/")
+	endforeach ()
 
-add_executable(loader ${SRCS_LOADER})
-target_link_libraries(loader PRIVATE core)
-target_include_directories(loader PRIVATE "src/loader/")
-target_compile_definitions(loader PRIVATE K22_LOADER=1)
-set_target_properties(loader PROPERTIES OUTPUT_NAME "K22Loader")
+	get_property(SUBDIRS DIRECTORY "${DIR}" PROPERTY SUBDIRECTORIES)
+	foreach (SUBDIR IN LISTS SUBDIRS)
+		print_all_targets("${SUBDIR}")
+	endforeach ()
+endfunction()
 
-add_executable(patcher ${SRCS_PATCHER})
-target_link_libraries(patcher PRIVATE core)
-target_include_directories(patcher PRIVATE "src/patcher/")
-target_compile_definitions(patcher PRIVATE K22_PATCHER=1)
-set_target_properties(patcher PROPERTIES OUTPUT_NAME "K22Patcher")
-
-add_library(verifier SHARED ${SRCS_VERIFIER})
-target_link_options(verifier PRIVATE /nodefaultlib /entry:DllMain)
-target_include_directories(verifier PRIVATE "src/verifier/")
-target_compile_definitions(verifier PRIVATE K22_VERIFIER=1)
-set_target_properties(verifier PROPERTIES OUTPUT_NAME "K22Verifier")
-
-add_executable(example ${SRCS_EXAMPLE})
-set_target_properties(example PROPERTIES OUTPUT_NAME "Example${K22_BITS}")
-
-set_target_properties(
-	core loader patcher verifier PROPERTIES
-	MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-)
+print_all_targets("${CMAKE_CURRENT_LIST_DIR}")
