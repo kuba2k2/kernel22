@@ -29,7 +29,8 @@
 #define K22_CORE_PROC __declspec(dllimport)
 #endif
 
-#include "k22_config.h"
+#include "k22_options.h"
+
 #include "k22_extern.h"
 #include "k22_logger.h"
 #include "k22_macros.h"
@@ -41,9 +42,9 @@
 #endif
 
 #if K22_CORE
-#include "k22_data.h"
-
+#include "k22_config.h"
 #include "k22_core.h"
+#include "k22_data.h"
 #endif
 
 // k22_hexdump.c

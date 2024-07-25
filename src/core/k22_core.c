@@ -19,7 +19,7 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
 
 	// read configuration from registry
 	K22_I("Reading configuration");
-	if (!K22DataReadConfig())
+	if (!K22ConfigRead())
 		return FALSE;
 
 	// initialize MinHook
