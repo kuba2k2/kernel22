@@ -25,6 +25,8 @@ BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR
 // k22_import.c
 BOOL K22ImportTableRestore(LPVOID lpImageBase);
 BOOL K22ProcessImports(LPVOID lpImageBase);
+// k22_resolve.c
+PVOID K22ResolveSymbol(LPCSTR lpDllName, LPCSTR lpSymbolName, ULONG_PTR ulSymbolOrdinal);
 
 // Runtime per-process data structure
 typedef struct K22_DATA {

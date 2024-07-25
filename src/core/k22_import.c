@@ -56,14 +56,6 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 	PIMAGE_IMPORT_DESCRIPTOR pImportDesc = RVA(dwImportDirectoryRva);
 	for (/**/; pImportDesc->FirstThunk; pImportDesc++) {
 		K22_I("Module %s imports %s", pK22ModuleData->lpModuleName, RVA(pImportDesc->Name));
-		HANDLE hModule = GetModuleHandle(RVA(pImportDesc->Name));
-		if (hModule == NULL) {
-			K22_D(" - not found, importing");
-			hModule = LoadLibrary(RVA(pImportDesc->Name));
-		}
-		if (hModule == NULL) {
-			RETURN_K22_F_ERR("Couldn't import module %s", RVA(pImportDesc->Name));
-		}
 
 		PULONG_PTR pThunk	  = RVA(pImportDesc->FirstThunk);
 		PULONG_PTR pOrigThunk = RVA(pImportDesc->OriginalFirstThunk);
@@ -73,7 +65,7 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 
 			PVOID pProcAddress;
 			if (IMAGE_SNAP_BY_ORDINAL(*pOrigThunk)) {
-				pProcAddress = GetProcAddress(hModule, (PVOID)IMAGE_ORDINAL(*pOrigThunk));
+				pProcAddress = K22ResolveSymbol(RVA(pImportDesc->Name), NULL, IMAGE_ORDINAL(*pOrigThunk));
 				K22_D(
 					"Module %s imports %s!#%lu -> %p",
 					pK22ModuleData->lpModuleName,
@@ -82,13 +74,13 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 					pProcAddress
 				);
 			} else {
-				PIMAGE_IMPORT_BY_NAME pImportByName = RVA(*pOrigThunk);
-				pProcAddress						= GetProcAddress(hModule, pImportByName->Name);
+				LPCSTR lpSymbolName = ((PIMAGE_IMPORT_BY_NAME)RVA(*pOrigThunk))->Name;
+				pProcAddress		= K22ResolveSymbol(RVA(pImportDesc->Name), lpSymbolName, 0);
 				K22_D(
 					"Module %s imports %s!%s -> %p",
 					pK22ModuleData->lpModuleName,
 					RVA(pImportDesc->Name),
-					pImportByName->Name,
+					lpSymbolName,
 					pProcAddress
 				);
 			}
