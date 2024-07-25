@@ -1,7 +1,5 @@
 // Copyright (c) Kuba Szczodrzyński 2024-2-25.
 
-#pragma once
-
 #include "kernel22.h"
 
 BOOL K22StringDup(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput) {

@@ -17,8 +17,3 @@ BOOL K22DataReadConfig();
 // k22_import.c
 BOOL K22ImportTableRestore(LPVOID lpImageBase);
 BOOL K22ProcessImports(LPVOID lpImageBase);
-// k22_utils.c
-BOOL K22StringDup(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
-BOOL K22StringDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
-BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR *ppSymbol);
-VOID K22DebugPrintModules();
