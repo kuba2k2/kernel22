@@ -54,6 +54,7 @@ static VOID K22CoreDllNotification(DWORD dwReason, PLDR_DLL_NOTIFICATION_DATA pD
 	switch (dwReason) {
 		case LDR_DLL_NOTIFICATION_REASON_LOADED:
 			K22_D("DLL @ %p: %ls - loaded", pData->Loaded.DllBase, pData->Loaded.BaseDllName->Buffer);
+			K22ProcessImports(pData->Loaded.DllBase);
 			break;
 		case LDR_DLL_NOTIFICATION_REASON_UNLOADED:
 			K22_D("DLL @ %p: %ls - unloaded", pData->Loaded.DllBase, pData->Loaded.BaseDllName->Buffer);

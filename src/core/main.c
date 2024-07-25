@@ -2,7 +2,7 @@
 
 #include "kernel22.h"
 
-// dummy entrypoint to import Core DLL
+// dummy function used to import Core DLL
 K22_CORE_PROC VOID DllLd() {}
 
 static BOOL DllInitialize(HANDLE hDll) {
