@@ -14,6 +14,10 @@ PK22_MODULE_DATA K22DataGetModule(LPVOID lpImageBase);
 BOOL K22DataInitialize(LPVOID lpImageBase);
 BOOL K22DataInitializeModule(LPVOID lpImageBase);
 BOOL K22DataReadConfig();
+// k22_file.c
+BOOL K22StringDup(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
+BOOL K22StringDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
+BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR *ppSymbol);
 // k22_import.c
 BOOL K22ImportTableRestore(LPVOID lpImageBase);
 BOOL K22ProcessImports(LPVOID lpImageBase);

@@ -58,7 +58,6 @@ K22_CORE_PROC BOOL K22PatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor);
 // k22_remote.c
 K22_CORE_PROC BOOL K22RemoteAttachToProcess(HANDLE hProcess);
 // k22_utils.c
-K22_CORE_PROC BOOL K22StringDup(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
-K22_CORE_PROC BOOL K22StringDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
-K22_CORE_PROC BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR *ppSymbol);
 K22_CORE_PROC VOID K22DebugPrintModules();
+K22_CORE_PROC BOOL K22DebugDumpModules(LPCSTR lpOutputDir, LPVOID lpImageBase);
+K22_CORE_PROC PLDR_DATA_TABLE_ENTRY K22GetLdrEntry(LPVOID lpImageBase);
