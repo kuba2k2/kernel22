@@ -159,9 +159,15 @@ static BOOL K22DebugEventOutputString(LPDEBUG_INFO lpInfo, LPOUTPUT_DEBUG_STRING
 		lpEvent->nDebugStringLength
 	);
 	if (lpEvent->fUnicode) {
-		K22_W("Debugger: OUTPUT_DEBUG_STRING_EVENT(lpDebugString=%ls)", lpDebugString);
+		PWCHAR pwDebugString = (PWCHAR)lpDebugString;
+		if (pwDebugString[lpEvent->nDebugStringLength / 2 - 2] == '\n')
+			pwDebugString[lpEvent->nDebugStringLength / 2 - 2] = '\0';
+		K22_W("Debugger: %ls", lpDebugString);
 	} else {
-		K22_W("Debugger: OUTPUT_DEBUG_STRING_EVENT(lpDebugString=%s)", lpDebugString);
+		PCHAR pcDebugString = (PCHAR)lpDebugString;
+		if (pcDebugString[lpEvent->nDebugStringLength - 2] == '\n')
+			pcDebugString[lpEvent->nDebugStringLength - 2] = '\0';
+		K22_W("Debugger: %s", lpDebugString);
 	}
 	LocalFree(lpDebugString);
 	return TRUE;

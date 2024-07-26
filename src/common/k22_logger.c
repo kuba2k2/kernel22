@@ -34,26 +34,39 @@ static TCHAR adwColors[] = {
 };
 #endif
 
-static VOID K22OutputString(LPCSTR lpMessage) {
+static CHAR pMessageBuffer[1024];
+static PCHAR pMessageHead = pMessageBuffer;
+
+static VOID K22OutputMessage() {
+	if (pMessageHead == pMessageBuffer)
+		return;
+	// end message with a newline character
+	pMessageHead[0] = '\n';
+	pMessageHead[1] = '\0';
+	// send a string to the debugger
 #if K22_LOG_OUTPUT_DEBUG_STRING
-	OutputDebugString(lpMessage);
+	OutputDebugString(pMessageBuffer);
 #endif
+	// print the message to console (verifier can't use console)
 #if !K22_VERIFIER
-	printf("%s", lpMessage);
+	printf("%s", pMessageBuffer);
 #endif
+	// rewind the writing head and reset the message buffer
+	pMessageBuffer[0] = '\0';
+	pMessageHead	  = pMessageBuffer;
 }
 
 static DWORD K22VPrintf(LPCSTR lpFormat, va_list Args) {
 	static int (*nt_vsnprintf)(char *Dest, size_t Count, const char *Format, va_list Args) = NULL;
-	static CHAR pMessageBuffer[1024];
 
 	if (nt_vsnprintf == NULL) {
 		HMODULE hNtdll = GetModuleHandle("ntdll.dll");
 		nt_vsnprintf   = (void *)GetProcAddress(hNtdll, "_vsnprintf");
 	}
 
-	DWORD cbMessage = nt_vsnprintf(pMessageBuffer, sizeof(pMessageBuffer), lpFormat, Args);
-	K22OutputString(pMessageBuffer);
+	DWORD cbMessage =
+		nt_vsnprintf(pMessageHead, sizeof(pMessageBuffer) - (pMessageHead - pMessageBuffer), lpFormat, Args);
+	pMessageHead += cbMessage;
 	return cbMessage;
 }
 
@@ -141,7 +154,8 @@ VOID K22LogWrite(
 	va_start(va_args, lpFormat);
 	K22VPrintf(lpFormat, va_args);
 	va_end(va_args);
-	K22OutputString("\n");
+
+	K22OutputMessage();
 
 	if (dwWin32Error == ERROR_SUCCESS)
 		return;
@@ -179,7 +193,8 @@ VOID K22LogWrite(
 		}
 	}
 
-	K22Printf("%*c====> CODE: %s (0x%08lx)\n", cbMessagePrefix, ' ', lpMessage, dwWin32Error);
+	K22Printf("%*c====> CODE: %s (0x%08lx)", cbMessagePrefix, ' ', lpMessage, dwWin32Error);
+	K22OutputMessage();
 
 	if (dwWin32Error != STATUS_BREAKPOINT) {
 		LocalFree(lpMessage);

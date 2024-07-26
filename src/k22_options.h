@@ -40,7 +40,7 @@
 
 // Loader configuration
 #ifndef K22_LOADER_DEBUGGER
-#define K22_LOADER_DEBUGGER 0
+#define K22_LOADER_DEBUGGER 1
 #endif
 
 // Core configuration
