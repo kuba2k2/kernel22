@@ -31,14 +31,19 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
 	if (!K22ImportTableRestore(pK22Data->lpProcessBase))
 		return FALSE;
 
-	// register DLL notification callback
-	K22_I("Registering DLL notification callback");
+	// import DLL notification functions
 	HANDLE hNtdll = GetModuleHandle("ntdll.dll");
 	if (hNtdll == INVALID_HANDLE_VALUE)
 		RETURN_K22_F_ERR("Couldn't get ntdll.dll handle");
 	LdrRegisterDllNotification = (PVOID)GetProcAddress(hNtdll, "LdrRegisterDllNotification");
 	if (LdrRegisterDllNotification == NULL)
 		RETURN_K22_F_ERR("Couldn't get LdrRegisterDllNotification address");
+	LdrUnregisterDllNotification = (PVOID)GetProcAddress(hNtdll, "LdrUnregisterDllNotification");
+	if (LdrUnregisterDllNotification == NULL)
+		RETURN_K22_F_ERR("Couldn't get LdrUnregisterDllNotification address");
+
+	// register DLL notification callback
+	K22_I("Registering DLL notification callback");
 	PVOID pCookie;
 	if (LdrRegisterDllNotification(0, K22CoreDllNotification, NULL, &pCookie) != ERROR_SUCCESS)
 		RETURN_K22_F_ERR("Couldn't register DLL notification");
