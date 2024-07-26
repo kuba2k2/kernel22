@@ -61,11 +61,11 @@
 		  : (pNt)->stNt32.OptionalHeader.DataDirectory[eEntry])                                                        \
 		 .VirtualAddress)
 
-#define K22_LDR_ENUM(pLdrEntry)                                                                                        \
-	for (PLDR_DATA_TABLE_ENTRY pLdrList	 = (PVOID)&NtCurrentPeb()->Ldr->InLoadOrderModuleList,                         \
+#define K22_LDR_ENUM(pLdrEntry, ModuleList, Links)                                                                     \
+	for (PLDR_DATA_TABLE_ENTRY pLdrList	 = (PVOID)&NtCurrentPeb()->Ldr->ModuleList,                                    \
 							   pLdrEntry = (PVOID)((PLIST_ENTRY)pLdrList)->Flink;                                      \
 		 pLdrEntry != pLdrList;                                                                                        \
-		 pLdrEntry = (PVOID)pLdrEntry->InLoadOrderLinks.Flink)
+		 pLdrEntry = (PVOID)pLdrEntry->Links.Flink)
 
 // Memory allocation macros
 

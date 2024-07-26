@@ -67,7 +67,7 @@ BOOL K22DataInitializeModule(LPVOID lpImageBase) {
 	pK22ModuleData->pNt		   = RVA(pK22ModuleData->pDosHeader->e_lfanew);
 
 	// find the module path and base name
-	K22_LDR_ENUM(pLdrEntry) {
+	K22_LDR_ENUM(pLdrEntry, InLoadOrderModuleList, InLoadOrderLinks) {
 		if (pLdrEntry->DllBase == lpImageBase) {
 			ANSI_STRING stName;
 			// convert to ANSI, then to lowercase and store in module data

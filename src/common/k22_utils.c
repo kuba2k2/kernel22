@@ -2,44 +2,36 @@
 
 #include "kernel22.h"
 
+static LPSTR K22LoadReasonString(LDR_DLL_LOAD_REASON eLoadReason) {
+	switch (eLoadReason) {
+		case LoadReasonStaticDependency:
+			return "LoadReasonStaticDependency";
+		case LoadReasonStaticForwarderDependency:
+			return "LoadReasonStaticForwarderDependency";
+		case LoadReasonDynamicForwarderDependency:
+			return "LoadReasonDynamicForwarderDependency";
+		case LoadReasonDelayloadDependency:
+			return "LoadReasonDelayloadDependency";
+		case LoadReasonDynamicLoad:
+			return "LoadReasonDynamicLoad";
+		case LoadReasonAsImageLoad:
+			return "LoadReasonAsImageLoad";
+		case LoadReasonAsDataLoad:
+			return "LoadReasonAsDataLoad";
+		case LoadReasonEnclavePrimary:
+			return "LoadReasonEnclavePrimary";
+		case LoadReasonEnclaveDependency:
+			return "LoadReasonEnclaveDependency";
+		case LoadReasonUnknown:
+			return "LoadReasonUnknown";
+	}
+	return "???";
+}
+
 VOID K22DebugPrintModules() {
-	K22_LDR_ENUM(pLdrEntry) {
-		LPSTR lpReason = NULL;
-		switch (pLdrEntry->LoadReason) {
-			case LoadReasonStaticDependency:
-				lpReason = "LoadReasonStaticDependency";
-				break;
-			case LoadReasonStaticForwarderDependency:
-				lpReason = "LoadReasonStaticForwarderDependency";
-				break;
-			case LoadReasonDynamicForwarderDependency:
-				lpReason = "LoadReasonDynamicForwarderDependency";
-				break;
-			case LoadReasonDelayloadDependency:
-				lpReason = "LoadReasonDelayloadDependency";
-				break;
-			case LoadReasonDynamicLoad:
-				lpReason = "LoadReasonDynamicLoad";
-				break;
-			case LoadReasonAsImageLoad:
-				lpReason = "LoadReasonAsImageLoad";
-				break;
-			case LoadReasonAsDataLoad:
-				lpReason = "LoadReasonAsDataLoad";
-				break;
-			case LoadReasonEnclavePrimary:
-				lpReason = "LoadReasonEnclavePrimary";
-				break;
-			case LoadReasonEnclaveDependency:
-				lpReason = "LoadReasonEnclaveDependency";
-				break;
-			case LoadReasonUnknown:
-				lpReason = "LoadReasonUnknown";
-				break;
-			default:
-				lpReason = "???";
-				break;
-		}
+	K22_D("InLoadOrderModuleList:");
+	K22_LDR_ENUM(pLdrEntry, InLoadOrderModuleList, InLoadOrderLinks) {
+		LPSTR lpReason = K22LoadReasonString(pLdrEntry->LoadReason);
 		K22_D(
 			"DLL @ %p: %ls (size %lu) - %s (%d)",
 			pLdrEntry->DllBase,
@@ -53,7 +45,7 @@ VOID K22DebugPrintModules() {
 
 BOOL K22DebugDumpModules(LPCSTR lpOutputDirName, LPVOID lpImageBase) {
 	CreateDirectory(lpOutputDirName, NULL);
-	K22_LDR_ENUM(pLdrEntry) {
+	K22_LDR_ENUM(pLdrEntry, InLoadOrderModuleList, InLoadOrderLinks) {
 		if (lpImageBase && lpImageBase != pLdrEntry->DllBase)
 			continue;
 		ANSI_STRING szModuleName;
@@ -83,7 +75,7 @@ BOOL K22DebugDumpModules(LPCSTR lpOutputDirName, LPVOID lpImageBase) {
 }
 
 PLDR_DATA_TABLE_ENTRY K22GetLdrEntry(LPVOID lpImageBase) {
-	K22_LDR_ENUM(pLdrEntry) {
+	K22_LDR_ENUM(pLdrEntry, InLoadOrderModuleList, InLoadOrderLinks) {
 		if (pLdrEntry->DllBase == lpImageBase)
 			return pLdrEntry;
 	}
