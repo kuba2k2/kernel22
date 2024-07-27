@@ -62,10 +62,12 @@
 		 .VirtualAddress)
 
 #define K22_LDR_ENUM(pLdrEntry, ModuleList, Links)                                                                     \
-	for (PLDR_DATA_TABLE_ENTRY pLdrList	 = (PVOID)&NtCurrentPeb()->Ldr->ModuleList,                                    \
-							   pLdrEntry = (PVOID)((PLIST_ENTRY)pLdrList)->Flink;                                      \
-		 pLdrEntry != pLdrList;                                                                                        \
-		 pLdrEntry = (PVOID)pLdrEntry->Links.Flink)
+	for (PLDR_DATA_TABLE_ENTRY pLdrListHead = (PVOID)&NtCurrentPeb()->Ldr->ModuleList,                                 \
+							   pLdrListNext = (PVOID)((PLIST_ENTRY)pLdrListHead)->Flink,                               \
+							   pLdrEntry	= CONTAINING_RECORD(pLdrListNext, LDR_DATA_TABLE_ENTRY, Links);            \
+		 pLdrListHead != pLdrListNext;                                                                                 \
+		 pLdrListNext					 = (PVOID)((PLIST_ENTRY)pLdrListNext)->Flink,                                  \
+							   pLdrEntry = CONTAINING_RECORD(pLdrListNext, LDR_DATA_TABLE_ENTRY, Links))
 
 // Memory allocation macros
 
