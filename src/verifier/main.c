@@ -12,6 +12,8 @@ VOID _RTC_CheckStackVars() {}
 
 VOID __GSHandlerCheck() {}
 
+VOID __report_rangecheckfailure() {}
+
 void __cdecl __security_check_cookie(_In_ uintptr_t _StackCookie) {}
 
 uintptr_t __security_cookie;
