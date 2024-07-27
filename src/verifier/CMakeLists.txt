@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-file(GLOB SRCS "*.c" "../common/k22_import_table.c" "../common/k22_logger.c")
+file(GLOB SRCS "*.c" "../common/k22_import_table.c")
 
 add_library(K22Verifier SHARED ${SRCS})
 target_link_options(K22Verifier PRIVATE /nodefaultlib /entry:DllMain)

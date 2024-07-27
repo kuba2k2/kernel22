@@ -46,6 +46,10 @@
 #include "k22_core.h"
 #endif
 
+#if K22_VERIFIER
+#define K22LogWrite(...)
+#endif
+
 // k22_hexdump.c
 K22_CORE_PROC VOID K22HexDump(CONST BYTE *pBuf, SIZE_T cbLength, ULONGLONG ullOffset);
 K22_CORE_PROC VOID K22HexDumpProcess(HANDLE hProcess, LPCVOID lpAddress, SIZE_T cbLength);
