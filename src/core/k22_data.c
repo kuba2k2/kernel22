@@ -23,7 +23,6 @@ BOOL K22DataInitialize(LPVOID lpImageBase) {
 
 	pK22Data->lpProcessBase = lpImageBase;
 	pK22Data->pNt			= RVA(pK22Data->pDosHeader->e_lfanew);
-	pK22Data->pPeb			= NtCurrentPeb();
 	pK22Data->fIs64Bit		= pK22Data->pNt->stFile.Machine == IMAGE_FILE_MACHINE_AMD64;
 
 	K22_MALLOC_LENGTH(pK22Data->lpProcessPath, MAX_PATH + 1);
@@ -63,8 +62,9 @@ BOOL K22DataInitializeModule(LPVOID lpImageBase) {
 	PK22_MODULE_DATA pK22ModuleData;
 	K22_CALLOC(pK22ModuleData);
 
-	pK22ModuleData->pDosHeader = RVA(0);
-	pK22ModuleData->pNt		   = RVA(pK22ModuleData->pDosHeader->e_lfanew);
+	pK22ModuleData->lpModuleBase = lpImageBase;
+	pK22ModuleData->pNt			 = RVA(pK22ModuleData->pDosHeader->e_lfanew);
+	pK22ModuleData->fIsProcess	 = lpImageBase == pK22Data->lpProcessBase;
 
 	// find the module path and base name
 	K22_LDR_ENUM(pLdrEntry, InLoadOrderModuleList, InLoadOrderLinks) {

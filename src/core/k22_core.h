@@ -25,6 +25,7 @@ BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR
 // k22_import.c
 BOOL K22ImportTableRestore(LPVOID lpImageBase);
 BOOL K22ProcessImports(LPVOID lpImageBase);
+BOOL K22CallInitRoutines();
 // k22_resolve.c
 PVOID K22ResolveSymbol(LPCSTR lpDllName, LPCSTR lpSymbolName, ULONG_PTR ulSymbolOrdinal);
 
@@ -37,11 +38,10 @@ typedef struct K22_DATA {
 	};
 
 	PIMAGE_NT_HEADERS3264 pNt;
-
-	PPEB pPeb;
-	BOOL fIs64Bit;
 	LPSTR lpProcessPath;
 	LPSTR lpProcessName;
+	BOOL fIs64Bit;
+	BOOL fDelayDllInit;
 
 	struct {
 		HKEY hMain;
@@ -66,10 +66,12 @@ typedef struct K22_MODULE_DATA {
 	};
 
 	PIMAGE_NT_HEADERS3264 pNt;
-
 	PLDR_DATA_TABLE_ENTRY pLdrEntry;
 	LPSTR lpModulePath;
 	LPSTR lpModuleName;
+	BOOL fIsProcess;
+
+	PDLL_INIT_ROUTINE lpDelayedInitRoutine;
 } K22_MODULE_DATA;
 
 #if K22_CORE

@@ -31,26 +31,22 @@ static LPSTR K22LoadReasonString(LDR_DLL_LOAD_REASON eLoadReason) {
 VOID K22DebugPrintModules() {
 	K22_D("InLoadOrderModuleList:");
 	K22_LDR_ENUM(pLdrEntry, InLoadOrderModuleList, InLoadOrderLinks) {
-		LPSTR lpReason = K22LoadReasonString(pLdrEntry->LoadReason);
 		K22_D(
-			"DLL @ %p: %ls (size %lu) - %s (%d)",
+			"DLL @ %p: %ls (size %lu) - entry @ %p",
 			pLdrEntry->DllBase,
 			pLdrEntry->BaseDllName.Buffer,
 			pLdrEntry->SizeOfImage,
-			lpReason,
-			pLdrEntry->LoadReason
+			pLdrEntry->EntryPoint
 		);
 	}
 	K22_D("InInitializationOrderModuleList:");
 	K22_LDR_ENUM(pLdrEntry, InInitializationOrderModuleList, InInitializationOrderLinks) {
-		LPSTR lpReason = K22LoadReasonString(pLdrEntry->LoadReason);
 		K22_D(
-			"DLL @ %p: %ls (size %lu) - %s (%d)",
+			"DLL @ %p: %ls (size %lu) - entry @ %p",
 			pLdrEntry->DllBase,
 			pLdrEntry->BaseDllName.Buffer,
 			pLdrEntry->SizeOfImage,
-			lpReason,
-			pLdrEntry->LoadReason
+			pLdrEntry->EntryPoint
 		);
 	}
 }
