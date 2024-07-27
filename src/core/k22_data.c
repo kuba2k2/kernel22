@@ -68,18 +68,20 @@ BOOL K22DataInitializeModule(LPVOID lpImageBase) {
 
 	// find the module path and base name
 	K22_LDR_ENUM(pLdrEntry, InLoadOrderModuleList, InLoadOrderLinks) {
-		if (pLdrEntry->DllBase == lpImageBase) {
-			ANSI_STRING stName;
-			// convert to ANSI, then to lowercase and store in module data
-			RtlUnicodeStringToAnsiString(&stName, &pLdrEntry->FullDllName, TRUE);
-			_strlwr(stName.Buffer);
-			pK22ModuleData->lpModulePath = stName.Buffer;
-			// same for module name
-			RtlUnicodeStringToAnsiString(&stName, &pLdrEntry->BaseDllName, TRUE);
-			_strlwr(stName.Buffer);
-			pK22ModuleData->lpModuleName = stName.Buffer;
-			break;
-		}
+		if (pLdrEntry->DllBase != lpImageBase)
+			continue;
+		ANSI_STRING stName;
+		// store data table entry
+		pK22ModuleData->pLdrEntry = pLdrEntry;
+		// convert to ANSI, then to lowercase and store in module data
+		RtlUnicodeStringToAnsiString(&stName, &pLdrEntry->FullDllName, TRUE);
+		_strlwr(stName.Buffer);
+		pK22ModuleData->lpModulePath = stName.Buffer;
+		// same for module name
+		RtlUnicodeStringToAnsiString(&stName, &pLdrEntry->BaseDllName, TRUE);
+		_strlwr(stName.Buffer);
+		pK22ModuleData->lpModuleName = stName.Buffer;
+		break;
 	}
 
 	DWORD dwOldProtect;

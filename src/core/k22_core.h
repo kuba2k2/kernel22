@@ -67,6 +67,7 @@ typedef struct K22_MODULE_DATA {
 
 	PIMAGE_NT_HEADERS3264 pNt;
 
+	PLDR_DATA_TABLE_ENTRY pLdrEntry;
 	LPSTR lpModulePath;
 	LPSTR lpModuleName;
 } K22_MODULE_DATA;
