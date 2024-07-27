@@ -3,8 +3,6 @@
 #include "kernel22.h"
 
 BOOL K22ImportTableRestore(LPVOID lpImageBase) {
-	DWORD dwOldProtect;
-
 	// get import directory
 	DWORD dwImportDirectoryRva = K22_NT_DATA_RVA(pK22Data->pNt, IMAGE_DIRECTORY_ENTRY_IMPORT);
 	if (dwImportDirectoryRva == 0)
@@ -16,25 +14,21 @@ BOOL K22ImportTableRestore(LPVOID lpImageBase) {
 		RETURN_K22_F("Image does not import any DLLs! (no first thunk)");
 	PULONG_PTR pFirstThunk = RVA(dwFirstThunkRva);
 
-	// unlock import directory
-	if (!K22UnlockMemoryLength((PVOID)pImportDescriptor, sizeof(*pImportDescriptor) * 2))
-		RETURN_K22_F_ERR("Couldn't unlock import directory");
-	// unlock first thunk
-	if (!K22UnlockMemoryLength((PVOID)pFirstThunk, sizeof(*pFirstThunk) * 2))
-		RETURN_K22_F_ERR("Couldn't unlock first thunk");
-
 	// restore original import directory
-	pImportDescriptor[0] = pK22Data->pK22Header->stOrigImportDescriptor[0];
-	pImportDescriptor[1] = pK22Data->pK22Header->stOrigImportDescriptor[1];
-	pFirstThunk[0]		 = pK22Data->pK22Header->ullOrigFirstThunk[0];
-	pFirstThunk[1]		 = pK22Data->pK22Header->ullOrigFirstThunk[1];
+	K22WithUnlockedLength(pImportDescriptor, sizeof(*pImportDescriptor) * 2) {
+		pImportDescriptor[0] = pK22Data->pK22Header->stOrigImportDescriptor[0];
+		pImportDescriptor[1] = pK22Data->pK22Header->stOrigImportDescriptor[1];
+	}
+	K22WithUnlockedLength(pFirstThunk, sizeof(*pFirstThunk) * 2) {
+		pFirstThunk[0] = pK22Data->pK22Header->ullOrigFirstThunk[0];
+		pFirstThunk[1] = pK22Data->pK22Header->ullOrigFirstThunk[1];
+	}
 
 	return TRUE;
 }
 
 BOOL K22ProcessImports(LPVOID lpImageBase) {
 	PK22_MODULE_DATA pK22ModuleData = K22DataGetModule(lpImageBase);
-	DWORD dwOldProtect;
 
 	K22_I("Processing imports of %p (%s)", lpImageBase, pK22ModuleData->lpModuleName);
 
@@ -78,9 +72,6 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 		PULONG_PTR pThunk	  = RVA(pImportDesc->FirstThunk);
 		PULONG_PTR pOrigThunk = RVA(pImportDesc->OriginalFirstThunk);
 		for (/**/; *pThunk != 0 && *pOrigThunk != 0; pThunk++, pOrigThunk++) {
-			if (!K22UnlockMemory(*pThunk))
-				RETURN_K22_F_ERR("Couldn't unlock thunk @ %p", pThunk);
-
 			PVOID pProcAddress;
 			if (IMAGE_SNAP_BY_ORDINAL(*pOrigThunk)) {
 				pProcAddress = K22ResolveSymbol(RVA(pImportDesc->Name), NULL, IMAGE_ORDINAL(*pOrigThunk));
@@ -113,15 +104,17 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 				}
 			}
 
-			*pThunk = (ULONG_PTR)pProcAddress;
+			K22WithUnlocked(*pThunk) {
+				*pThunk = (ULONG_PTR)pProcAddress;
+			}
 		}
 
 		// disable the import descriptor, so that ntdll.dll doesn't use it anymore
 		// otherwise it would re-snap all thunks after the DLL notification callback
-		if (!K22UnlockMemory(*pImportDesc))
-			RETURN_K22_F_ERR("Couldn't unlock import descriptor @ %p", pImportDesc);
-		pImportDesc->FirstThunk			= 0;
-		pImportDesc->OriginalFirstThunk = 0;
+		K22WithUnlocked(*pImportDesc) {
+			pImportDesc->FirstThunk			= 0;
+			pImportDesc->OriginalFirstThunk = 0;
+		}
 	}
 
 	return TRUE;

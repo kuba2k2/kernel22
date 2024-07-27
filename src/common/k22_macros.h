@@ -20,20 +20,29 @@
 #define K22WriteProcessMemoryArray(hProcess, lpBaseAddress, ullOffset, pvIn)                                           \
 	WriteProcessMemory(hProcess, (LPVOID)((ULONGLONG)lpBaseAddress + ullOffset), pvIn, sizeof(pvIn), NULL)
 
-#define K22UnlockProcessMemory(hProcess, lpBaseAddress, ullOffset, cbLength, lpOldProtect)                             \
-	VirtualProtectEx(hProcess, (LPVOID)((ULONGLONG)lpBaseAddress + ullOffset), cbLength, PAGE_READWRITE, lpOldProtect)
-
 // Memory macros
 
-#define K22UnlockMemory(vIn)				  VirtualProtect((PVOID)&vIn, sizeof(vIn), PAGE_READWRITE, &dwOldProtect)
-#define K22UnlockMemoryLength(pvIn, cbLength) VirtualProtect((PVOID)pvIn, cbLength, PAGE_READWRITE, &dwOldProtect)
-#define K22UnlockMemoryArray(pvIn)			  VirtualProtect((PVOID)pvIn, sizeof(pvIn), PAGE_READWRITE, &dwOldProtect)
+#define CONCAT_(prefix, suffix) prefix##suffix
+#define CONCAT(prefix, suffix)	CONCAT_(prefix, suffix)
+#define UNIQ(name)				CONCAT(name, __LINE__)
 
-#define K22UnlockExecuteMemory(vIn) VirtualProtect((PVOID)&vIn, sizeof(vIn), PAGE_EXECUTE_READWRITE, &dwOldProtect)
-#define K22UnlockExecuteMemoryLength(pvIn, cbLength)                                                                   \
-	VirtualProtect((PVOID)pvIn, cbLength, PAGE_EXECUTE_READWRITE, &dwOldProtect)
-#define K22UnlockExecuteMemoryArray(pvIn)                                                                              \
-	VirtualProtect((PVOID)pvIn, sizeof(pvIn), PAGE_EXECUTE_READWRITE, &dwOldProtect)
+#define K22WithUnlockedMemory(lpAddress, dwSize)                                                                       \
+	for (DWORD UNIQ(dwOldProtect),                                                                                     \
+		 UNIQ(dwUnused) = VirtualProtect(lpAddress, dwSize, PAGE_READWRITE, &UNIQ(dwOldProtect)),                      \
+		 UNIQ(dwLoop)	= TRUE;                                                                                        \
+		 UNIQ(dwLoop);                                                                                                 \
+		 UNIQ(dwLoop) = FALSE, VirtualProtect(lpAddress, dwSize, UNIQ(dwOldProtect), &UNIQ(dwUnused)))
+
+#define K22WithUnlockedProcess(hProcess, lpAddress, dwSize)                                                            \
+	for (DWORD UNIQ(dwOldProtect),                                                                                     \
+		 UNIQ(dwUnused) = VirtualProtectEx(hProcess, lpAddress, dwSize, PAGE_READWRITE, &UNIQ(dwOldProtect)),          \
+		 UNIQ(dwLoop)	= TRUE;                                                                                        \
+		 UNIQ(dwLoop);                                                                                                 \
+		 UNIQ(dwLoop) = FALSE, VirtualProtectEx(hProcess, lpAddress, dwSize, UNIQ(dwOldProtect), &UNIQ(dwUnused)))
+
+#define K22WithUnlocked(vIn)				  K22WithUnlockedMemory((PVOID)&vIn, sizeof(vIn))
+#define K22WithUnlockedLength(pvIn, cbLength) K22WithUnlockedMemory((PVOID)pvIn, cbLength)
+#define K22WithUnlockedArray(pvIn)			  K22WithUnlockedMemory((PVOID)pvIn, sizeof(pvIn))
 
 // File macros
 

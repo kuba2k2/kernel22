@@ -84,10 +84,9 @@ BOOL K22DataInitializeModule(LPVOID lpImageBase) {
 		break;
 	}
 
-	DWORD dwOldProtect;
-	if (!K22UnlockMemory(*pK22Header))
-		RETURN_K22_F_ERR("Couldn't unlock DOS header");
-	pK22Header->dwCoreMagic	 = K22_CORE_MAGIC;
-	pK22Header->lpModuleData = pK22ModuleData;
+	K22WithUnlocked(*pK22Header) {
+		pK22Header->dwCoreMagic	 = K22_CORE_MAGIC;
+		pK22Header->lpModuleData = pK22ModuleData;
+	}
 	return TRUE;
 }

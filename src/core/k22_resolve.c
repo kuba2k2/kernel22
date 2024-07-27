@@ -9,6 +9,13 @@ static BOOL K22GetVersionExA(OSVERSIONINFO *osvi) {
 	return TRUE;
 }
 
+static BOOL K22GetVersionExW(OSVERSIONINFOW *osvi) {
+	osvi->dwMajorVersion = 10;
+	osvi->dwMinorVersion = 0;
+	osvi->dwBuildNumber	 = 10240;
+	return TRUE;
+}
+
 PVOID K22ResolveSymbol(LPCSTR lpDllName, LPCSTR lpSymbolName, ULONG_PTR ulSymbolOrdinal) {
 	HANDLE hDll = GetModuleHandle(lpDllName);
 	if (hDll == NULL) {
@@ -17,6 +24,8 @@ PVOID K22ResolveSymbol(LPCSTR lpDllName, LPCSTR lpSymbolName, ULONG_PTR ulSymbol
 	if (lpSymbolName) {
 		if (strcmp(lpSymbolName, "GetVersionExA") == 0)
 			return K22GetVersionExA;
+		if (strcmp(lpSymbolName, "GetVersionExW") == 0)
+			return K22GetVersionExW;
 		return GetProcAddress(hDll, lpSymbolName);
 	}
 	return GetProcAddress(hDll, (PVOID)ulSymbolOrdinal);

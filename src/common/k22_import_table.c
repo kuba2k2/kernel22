@@ -56,8 +56,6 @@ static BOOL K22ImportTablePatch(
 #if !K22_VERIFIER
 
 BOOL K22ImportTablePatchProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBase) {
-	DWORD dwOldProtect;
-
 	// read DOS header as K22 header
 	IMAGE_K22_HEADER stK22Header;
 	if (!K22ReadProcessMemory(hProcess, lpImageBase, 0, stK22Header))
@@ -86,33 +84,31 @@ BOOL K22ImportTablePatchProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBas
 		return FALSE;
 
 	// write modified DOS header
-	if (!K22UnlockProcessMemory(hProcess, lpImageBase, 0, sizeof(stK22Header), &dwOldProtect))
-		RETURN_K22_F_ERR("Couldn't unlock DOS header");
-	if (!K22WriteProcessMemory(hProcess, lpImageBase, 0, stK22Header))
-		RETURN_K22_F_ERR("Couldn't write DOS header");
+	K22WithUnlockedProcess(hProcess, RVA(0), sizeof(stK22Header)) {
+		if (!K22WriteProcessMemory(hProcess, lpImageBase, 0, stK22Header))
+			RETURN_K22_F_ERR("Couldn't write DOS header");
+	}
 	// write modified NT header
-	if (!K22UnlockProcessMemory(hProcess, lpImageBase, stK22Header.dwPeRva, sizeof(stNt), &dwOldProtect))
-		RETURN_K22_F_ERR("Couldn't unlock NT header");
-	if (!K22WriteProcessMemory(hProcess, lpImageBase, stK22Header.dwPeRva, stNt))
-		RETURN_K22_F_ERR("Couldn't write NT header");
+	K22WithUnlockedProcess(hProcess, RVA(stK22Header.dwPeRva), sizeof(stNt)) {
+		if (!K22WriteProcessMemory(hProcess, lpImageBase, stK22Header.dwPeRva, stNt))
+			RETURN_K22_F_ERR("Couldn't write NT header");
+	}
 	// write modified import directory
-	if (!K22UnlockProcessMemory(hProcess, lpImageBase, dwImportDirectoryRva, sizeof(stImportDescriptor), &dwOldProtect))
-		RETURN_K22_F_ERR("Couldn't unlock import directory");
-	if (!K22WriteProcessMemory(hProcess, lpImageBase, dwImportDirectoryRva, stImportDescriptor))
-		RETURN_K22_F_ERR("Couldn't write import directory");
+	K22WithUnlockedProcess(hProcess, RVA(dwImportDirectoryRva), sizeof(stImportDescriptor)) {
+		if (!K22WriteProcessMemory(hProcess, lpImageBase, dwImportDirectoryRva, stImportDescriptor))
+			RETURN_K22_F_ERR("Couldn't write import directory");
+	}
 	// write modified first thunk
-	if (!K22UnlockProcessMemory(hProcess, lpImageBase, dwFirstThunkRva, sizeof(ullFirstThunk), &dwOldProtect))
-		RETURN_K22_F_ERR("Couldn't unlock first thunk");
-	if (!K22WriteProcessMemory(hProcess, lpImageBase, dwFirstThunkRva, ullFirstThunk))
-		RETURN_K22_F_ERR("Couldn't write first thunk");
+	K22WithUnlockedProcess(hProcess, RVA(dwFirstThunkRva), sizeof(ullFirstThunk)) {
+		if (!K22WriteProcessMemory(hProcess, lpImageBase, dwFirstThunkRva, ullFirstThunk))
+			RETURN_K22_F_ERR("Couldn't write first thunk");
+	}
 	return TRUE;
 }
 
 #endif
 
 BOOL K22ImportTablePatchImage(BYTE bSource, LPVOID lpImageBase) {
-	DWORD dwOldProtect;
-
 	// get DOS header as K22 header
 	PIMAGE_K22_HEADER pK22Header = (PIMAGE_K22_HEADER)lpImageBase;
 	// get NT header
@@ -128,22 +124,17 @@ BOOL K22ImportTablePatchImage(BYTE bSource, LPVOID lpImageBase) {
 		RETURN_K22_F("Image does not import any DLLs! (no first thunk)");
 	PULONG_PTR pFirstThunk = RVA(dwFirstThunkRva);
 
-	// unlock DOS header
-	if (!K22UnlockMemory(*pK22Header))
-		RETURN_K22_F_ERR("Couldn't unlock DOS header");
-	// unlock NT header
-	if (!K22UnlockMemory(*pNt))
-		RETURN_K22_F_ERR("Couldn't unlock NT header");
-	// unlock import directory
-	if (!K22UnlockMemoryLength((PVOID)pImportDescriptor, sizeof(*pImportDescriptor) * 2))
-		RETURN_K22_F_ERR("Couldn't unlock import directory");
-	// unlock first thunk
-	if (!K22UnlockMemoryLength((PVOID)pFirstThunk, sizeof(*pFirstThunk) * 2))
-		RETURN_K22_F_ERR("Couldn't unlock first thunk");
-
 	// modify the import table
-	if (!K22ImportTablePatch(bSource, pK22Header, pImportDescriptor, pFirstThunk))
-		return FALSE;
+	K22WithUnlocked(*pK22Header) {
+		K22WithUnlocked(*pNt) {
+			K22WithUnlockedLength(pImportDescriptor, sizeof(*pImportDescriptor) * 2) {
+				K22WithUnlockedLength(pFirstThunk, sizeof(*pFirstThunk) * 2) {
+					if (!K22ImportTablePatch(bSource, pK22Header, pImportDescriptor, pFirstThunk))
+						return FALSE;
+				}
+			}
+		}
+	}
 
 	return TRUE;
 }
