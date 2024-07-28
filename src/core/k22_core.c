@@ -25,7 +25,7 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
 
 	// restore the import directory + first thunk
 	K22_I("Restoring import directory");
-	if (!K22ImportTableRestore(pK22Data->lpProcessBase))
+	if (!K22RestoreImportTable(pK22Data->lpProcessBase))
 		return FALSE;
 
 	// import DLL notification functions
@@ -74,7 +74,22 @@ static VOID K22CoreDllNotification(DWORD dwReason, PLDR_DLL_NOTIFICATION_DATA pD
 				pData->Loaded.BaseDllName->Buffer,
 				pLdrEntry->EntryPoint
 			);
-			K22ProcessImports(pData->Loaded.DllBase);
+			if (!K22ClearBoundImportTable(pData->Loaded.DllBase)) {
+				K22_F(
+					"Couldn't clear bound import table of %ls (%p)",
+					pData->Loaded.BaseDllName->Buffer,
+					pData->Loaded.DllBase
+				);
+				return;
+			}
+			if (!K22ProcessImports(pData->Loaded.DllBase)) {
+				K22_F(
+					"Couldn't process import table of %ls (%p)",
+					pData->Loaded.BaseDllName->Buffer,
+					pData->Loaded.DllBase
+				);
+				return;
+			}
 			break;
 		case LDR_DLL_NOTIFICATION_REASON_UNLOADED:
 			K22_D("DLL @ %p: %ls - unloaded", pData->Loaded.DllBase, pData->Loaded.BaseDllName->Buffer);

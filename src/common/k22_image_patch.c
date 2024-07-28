@@ -8,7 +8,7 @@
 void RtlCopyMemory(void *Destination, const void *Source, size_t Length);
 void RtlZeroMemory(void *Destination, size_t Length);
 
-static BOOL K22ImportTablePatch(
+static BOOL K22PatchImportTableImpl(
 	BYTE bSource, PIMAGE_K22_HEADER pK22Header, PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor, PULONGLONG pFirstThunk
 ) {
 	// make sure there's enough room in the DOS stub
@@ -53,9 +53,38 @@ static BOOL K22ImportTablePatch(
 	return TRUE;
 }
 
+BOOL K22PatchImportTable(BYTE bSource, LPVOID lpImageBase) {
+	// get DOS header as K22 header
+	PIMAGE_K22_HEADER pK22Header = (PIMAGE_K22_HEADER)lpImageBase;
+	// get NT header
+	PIMAGE_NT_HEADERS3264 pNt = RVA(pK22Header->dwPeRva);
+	// get import directory
+	DWORD dwImportDirectoryRva = K22_NT_DATA_RVA(pNt, IMAGE_DIRECTORY_ENTRY_IMPORT);
+	if (dwImportDirectoryRva == 0)
+		RETURN_K22_F("Image does not import any DLLs! (no import directory)");
+	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor = RVA(dwImportDirectoryRva);
+	// get first thunk
+	DWORD dwFirstThunkRva = pImportDescriptor[0].FirstThunk;
+	if (dwFirstThunkRva == 0)
+		RETURN_K22_F("Image does not import any DLLs! (no first thunk)");
+	PULONG_PTR pFirstThunk = RVA(dwFirstThunkRva);
+
+	// modify the import table
+	K22WithUnlocked(*pK22Header) {
+		K22WithUnlockedLength(pImportDescriptor, sizeof(*pImportDescriptor) * 2) {
+			K22WithUnlockedLength(pFirstThunk, sizeof(*pFirstThunk) * 2) {
+				if (!K22PatchImportTableImpl(bSource, pK22Header, pImportDescriptor, pFirstThunk))
+					return FALSE;
+			}
+		}
+	}
+
+	return TRUE;
+}
+
 #if !K22_VERIFIER
 
-BOOL K22ImportTablePatchProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBase) {
+BOOL K22PatchImportTableProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBase) {
 	// read DOS header as K22 header
 	IMAGE_K22_HEADER stK22Header;
 	if (!K22ReadProcessMemory(hProcess, lpImageBase, 0, stK22Header))
@@ -80,7 +109,7 @@ BOOL K22ImportTablePatchProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBas
 		RETURN_K22_F_ERR("Couldn't read first thunk");
 
 	// modify the import table
-	if (!K22ImportTablePatch(bSource, &stK22Header, stImportDescriptor, ullFirstThunk))
+	if (!K22PatchImportTableImpl(bSource, &stK22Header, stImportDescriptor, ullFirstThunk))
 		return FALSE;
 
 	// write modified DOS header
@@ -106,41 +135,6 @@ BOOL K22ImportTablePatchProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBas
 	return TRUE;
 }
 
-#endif
-
-BOOL K22ImportTablePatchImage(BYTE bSource, LPVOID lpImageBase) {
-	// get DOS header as K22 header
-	PIMAGE_K22_HEADER pK22Header = (PIMAGE_K22_HEADER)lpImageBase;
-	// get NT header
-	PIMAGE_NT_HEADERS3264 pNt = RVA(pK22Header->dwPeRva);
-	// get import directory
-	DWORD dwImportDirectoryRva = K22_NT_DATA_RVA(pNt, IMAGE_DIRECTORY_ENTRY_IMPORT);
-	if (dwImportDirectoryRva == 0)
-		RETURN_K22_F("Image does not import any DLLs! (no import directory)");
-	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor = RVA(dwImportDirectoryRva);
-	// get first thunk
-	DWORD dwFirstThunkRva = pImportDescriptor[0].FirstThunk;
-	if (dwFirstThunkRva == 0)
-		RETURN_K22_F("Image does not import any DLLs! (no first thunk)");
-	PULONG_PTR pFirstThunk = RVA(dwFirstThunkRva);
-
-	// modify the import table
-	K22WithUnlocked(*pK22Header) {
-		K22WithUnlocked(*pNt) {
-			K22WithUnlockedLength(pImportDescriptor, sizeof(*pImportDescriptor) * 2) {
-				K22WithUnlockedLength(pFirstThunk, sizeof(*pFirstThunk) * 2) {
-					if (!K22ImportTablePatch(bSource, pK22Header, pImportDescriptor, pFirstThunk))
-						return FALSE;
-				}
-			}
-		}
-	}
-
-	return TRUE;
-}
-
-#if !K22_VERIFIER
-
 static DWORD K22RvaToRaw(PIMAGE_SECTION_HEADER pSections, PIMAGE_SECTION_HEADER pSectionsEnd, DWORD dwRva) {
 	for (PIMAGE_SECTION_HEADER pSection = pSections; pSection < pSectionsEnd; pSection++) {
 		if (dwRva >= pSection->VirtualAddress && dwRva < pSection->VirtualAddress + pSection->Misc.VirtualSize) {
@@ -150,7 +144,7 @@ static DWORD K22RvaToRaw(PIMAGE_SECTION_HEADER pSections, PIMAGE_SECTION_HEADER 
 	return 0;
 }
 
-BOOL K22ImportTablePatchFile(BYTE bSource, HANDLE hFile) {
+BOOL K22PatchImportTableFile(BYTE bSource, HANDLE hFile) {
 	DWORD dwFileBytes;
 
 	// read DOS header as K22 header
@@ -217,7 +211,7 @@ next:
 	LocalFree(pSections);
 
 	// modify the import table
-	if (!K22ImportTablePatch(bSource, &stK22Header, stImportDescriptor, ullFirstThunk))
+	if (!K22PatchImportTableImpl(bSource, &stK22Header, stImportDescriptor, ullFirstThunk))
 		return FALSE;
 
 	// write modified DOS header
@@ -232,6 +226,82 @@ next:
 	// write modified first thunk
 	if (!K22WriteFile(hFile, dwFirstThunkRaw, ullFirstThunk, &dwFileBytes))
 		RETURN_K22_F_ERR("Couldn't write first thunk");
+	return TRUE;
+}
+
+#endif
+
+static BOOL K22ClearBoundImportTableImpl(PIMAGE_NT_HEADERS3264 pNt) {
+	if (pNt->stNt64.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+		pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].VirtualAddress = 0;
+		pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size			= 0;
+	} else if (pNt->stNt32.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+		pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].VirtualAddress = 0;
+		pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size			= 0;
+	} else {
+		RETURN_K22_F("Unrecognized OptionalHeader magic %04X", pNt->stNt32.OptionalHeader.Magic);
+	}
+	return TRUE;
+}
+
+BOOL K22ClearBoundImportTable(LPVOID lpImageBase) {
+	// get DOS header as K22 header
+	PIMAGE_K22_HEADER pK22Header = (PIMAGE_K22_HEADER)lpImageBase;
+	// get NT header
+	PIMAGE_NT_HEADERS3264 pNt = RVA(pK22Header->dwPeRva);
+
+	// clear the bound import table
+	K22WithUnlocked(*pNt) {
+		if (!K22ClearBoundImportTableImpl(pNt))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+#if !K22_VERIFIER
+
+BOOL K22ClearBoundImportTableProcess(HANDLE hProcess, LPVOID lpImageBase) {
+	// read DOS header as K22 header
+	IMAGE_K22_HEADER stK22Header;
+	if (!K22ReadProcessMemory(hProcess, lpImageBase, 0, stK22Header))
+		RETURN_K22_F_ERR("Couldn't read DOS header");
+	// read NT header
+	IMAGE_NT_HEADERS3264 stNt;
+	if (!K22ReadProcessMemory(hProcess, lpImageBase, stK22Header.dwPeRva, stNt))
+		RETURN_K22_F_ERR("Couldn't read NT header");
+
+	// clear the bound import table
+	if (!K22ClearBoundImportTableImpl(&stNt))
+		return FALSE;
+
+	// write modified NT header
+	K22WithUnlockedProcess(hProcess, RVA(stK22Header.dwPeRva), sizeof(stNt)) {
+		if (!K22WriteProcessMemory(hProcess, lpImageBase, stK22Header.dwPeRva, stNt))
+			RETURN_K22_F_ERR("Couldn't write NT header");
+	}
+	return TRUE;
+}
+
+BOOL K22ClearBoundImportTableFile(HANDLE hFile) {
+	DWORD dwFileBytes;
+
+	// read DOS header as K22 header
+	IMAGE_K22_HEADER stK22Header;
+	if (!K22ReadFile(hFile, 0, stK22Header, &dwFileBytes))
+		RETURN_K22_F_ERR("Couldn't read DOS header");
+	// read NT header
+	IMAGE_NT_HEADERS3264 stNt;
+	if (!K22ReadFile(hFile, stK22Header.dwPeRva, stNt, &dwFileBytes))
+		RETURN_K22_F_ERR("Couldn't read NT header");
+
+	// clear the bound import table
+	if (!K22ClearBoundImportTableImpl(&stNt))
+		return FALSE;
+
+	// write modified NT header
+	if (!K22WriteFile(hFile, stK22Header.dwPeRva, stNt, &dwFileBytes))
+		RETURN_K22_F_ERR("Couldn't write NT header");
 	return TRUE;
 }
 

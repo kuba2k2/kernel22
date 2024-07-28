@@ -16,9 +16,13 @@ int main(int argc, const char *argv[]) {
 		return 2;
 	}
 
-	if (!K22ImportTablePatchFile(K22_SOURCE_PATCHER, hFile)) {
+	if (!K22PatchImportTableFile(K22_SOURCE_PATCHER, hFile)) {
 		CloseHandle(hFile);
 		return 3;
+	}
+	if (!K22ClearBoundImportTableFile(hFile)) {
+		CloseHandle(hFile);
+		return 4;
 	}
 
 	K22_I("File '%s' patched successfully", lpImageName);

@@ -26,7 +26,9 @@ BOOL K22RemoteAttachToProcess(HANDLE hProcess) {
 
 	// patch import table to load K22 Core
 	K22_I("Patching import table");
-	if (!K22ImportTablePatchProcess(K22_SOURCE_LOADER, hProcess, lpImageBase))
+	if (!K22PatchImportTableProcess(K22_SOURCE_LOADER, hProcess, lpImageBase))
+		return FALSE;
+	if (!K22ClearBoundImportTableProcess(hProcess, lpImageBase))
 		return FALSE;
 
 	return TRUE;

@@ -53,10 +53,15 @@
 // k22_hexdump.c
 K22_CORE_PROC VOID K22HexDump(CONST BYTE *pBuf, SIZE_T cbLength, ULONGLONG ullOffset);
 K22_CORE_PROC VOID K22HexDumpProcess(HANDLE hProcess, LPCVOID lpAddress, SIZE_T cbLength);
-// k22_import_table.c
-K22_CORE_PROC BOOL K22ImportTablePatchProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBase);
-K22_CORE_PROC BOOL K22ImportTablePatchImage(BYTE bSource, LPVOID lpImageBase);
-K22_CORE_PROC BOOL K22ImportTablePatchFile(BYTE bSource, HANDLE hFile);
+// k22_image_patch.c
+K22_CORE_PROC BOOL K22PatchImportTable(BYTE bSource, LPVOID lpImageBase);
+K22_CORE_PROC BOOL K22PatchImportTableProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBase);
+K22_CORE_PROC BOOL K22PatchImportTableFile(BYTE bSource, HANDLE hFile);
+K22_CORE_PROC BOOL K22ClearBoundImportTable(LPVOID lpImageBase);
+K22_CORE_PROC BOOL K22ClearBoundImportTableProcess(HANDLE hProcess, LPVOID lpImageBase);
+K22_CORE_PROC BOOL K22ClearBoundImportTableFile(HANDLE hFile);
+// k22_image_restore.c
+K22_CORE_PROC BOOL K22RestoreImportTable(LPVOID lpImageBase);
 // k22_patch.c
 K22_CORE_PROC BOOL K22PatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor);
 // k22_remote.c
