@@ -49,7 +49,10 @@ static VOID K22OutputMessage() {
 #endif
 	// print the message to console (verifier can't use console)
 #if !K22_VERIFIER
-	printf("%s", pMessageBuffer);
+	// don't print to console if launched via the loader (it prints debug strings anyway)
+	PIMAGE_K22_HEADER pK22Header = NtCurrentPeb()->ImageBaseAddress;
+	if (pK22Header->bSource != K22_SOURCE_LOADER)
+		printf("%s", pMessageBuffer);
 #endif
 	// rewind the writing head and reset the message buffer
 	pMessageBuffer[0] = '\0';

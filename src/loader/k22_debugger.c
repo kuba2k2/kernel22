@@ -150,26 +150,44 @@ static BOOL K22DebugEventUnloadDll(LPDEBUG_INFO lpInfo, LPUNLOAD_DLL_DEBUG_INFO 
 }
 
 static BOOL K22DebugEventOutputString(LPDEBUG_INFO lpInfo, LPOUTPUT_DEBUG_STRING_INFO lpEvent) {
-	LPVOID lpDebugString = LocalAlloc(0, lpEvent->nDebugStringLength);
-	K22ReadProcessMemoryLength(
-		lpInfo->hProcess,
-		lpEvent->lpDebugStringData,
-		0,
-		lpDebugString,
-		lpEvent->nDebugStringLength
-	);
+	WORD wDebugLength	 = lpEvent->nDebugStringLength;
+	LPVOID lpDebugString = LocalAlloc(0, wDebugLength);
+	K22ReadProcessMemoryLength(lpInfo->hProcess, lpEvent->lpDebugStringData, 0, lpDebugString, wDebugLength);
+
+	// trim trailing newline
 	if (lpEvent->fUnicode) {
 		PWCHAR pwDebugString = (PWCHAR)lpDebugString;
-		if (pwDebugString[lpEvent->nDebugStringLength / 2 - 2] == '\n')
-			pwDebugString[lpEvent->nDebugStringLength / 2 - 2] = '\0';
-		K22_W("Debugger: %ls", lpDebugString);
+		if (pwDebugString[wDebugLength / 2 - 2] == '\n')
+			pwDebugString[wDebugLength / 2 - 2] = '\0';
 	} else {
 		PCHAR pcDebugString = (PCHAR)lpDebugString;
-		if (pcDebugString[lpEvent->nDebugStringLength - 2] == '\n')
-			pcDebugString[lpEvent->nDebugStringLength - 2] = '\0';
+		if (pcDebugString[wDebugLength - 2] == '\n')
+			pcDebugString[wDebugLength - 2] = '\0';
+	}
+
+	// skip duplicated messages
+	static WORD wPrevLength	   = 0;
+	static LPVOID lpPrevString = NULL;
+	if (lpPrevString) {
+		// compare with the previous message
+		if (wDebugLength == wPrevLength && memcmp(lpDebugString, lpPrevString, wDebugLength) == 0) {
+			// free the message since it's identical
+			LocalFree(lpDebugString);
+			// skip printing it
+			return TRUE;
+		}
+		// message differs - free the previous one
+		LocalFree(lpPrevString);
+	}
+	// keep the new message for next events
+	wPrevLength	 = wDebugLength;
+	lpPrevString = lpDebugString;
+
+	if (lpEvent->fUnicode) {
+		K22_W("Debugger: %ls", lpDebugString);
+	} else {
 		K22_W("Debugger: %s", lpDebugString);
 	}
-	LocalFree(lpDebugString);
 	return TRUE;
 }
 

@@ -19,13 +19,15 @@ static BOOL K22PatchImportTableImpl(
 			sizeof(*pK22Header)
 		);
 
-	// set header cookie
+	// always set the latest load source
+	pK22Header->bSource = bSource;
+	// exit if the image has been patched
 	if (RtlCompareMemory(pK22Header->bCookie, K22_COOKIE, 3) == 3) {
 		K22_W("Image has already been patched!");
 		return TRUE;
 	}
+	// otherwise write the patch cookie
 	RtlCopyMemory(pK22Header->bCookie, K22_COOKIE, 3);
-	pK22Header->bSource = bSource;
 
 	// copy original import directory
 	pK22Header->stOrigImportDescriptor[0] = pImportDescriptor[0];
