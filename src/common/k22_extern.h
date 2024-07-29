@@ -4,6 +4,12 @@
 
 #include "kernel22.h"
 
+#undef RtlCopyMemory
+#undef RtlZeroMemory
+
+void RtlCopyMemory(void *Destination, const void *Source, size_t Length);
+void RtlZeroMemory(void *Destination, size_t Length);
+
 typedef union {
 	struct {
 		DWORD dwSignature;

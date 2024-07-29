@@ -49,7 +49,7 @@ BOOL APIENTRY DllMain(HANDLE hDll, DWORD dwReason, PRTL_VERIFIER_PROVIDER_DESCRI
 	// patch the current process
 	if (!K22PatchImportTable(K22_SOURCE_VERIFIER, NtCurrentPeb()->ImageBaseAddress))
 		return FALSE;
-	if (!K22ClearBoundImportTable(NtCurrentPeb()->ImageBaseAddress))
+	if (!K22PatchBoundImportTable(TRUE, NtCurrentPeb()->ImageBaseAddress))
 		return FALSE;
 
 	return TRUE;

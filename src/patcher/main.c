@@ -16,16 +16,18 @@ int main(int argc, const char *argv[]) {
 		return 2;
 	}
 
-	if (!K22PatchImportTableFile(K22_SOURCE_PATCHER, hFile)) {
+	BOOL fPatch = TRUE;
+
+	if (!K22PatchImportTableFile(fPatch ? K22_SOURCE_PATCHER : K22_SOURCE_NONE, hFile)) {
 		CloseHandle(hFile);
 		return 3;
 	}
-	if (!K22ClearBoundImportTableFile(hFile)) {
+	if (!K22PatchBoundImportTableFile(fPatch, hFile)) {
 		CloseHandle(hFile);
 		return 4;
 	}
 
-	K22_I("File '%s' patched successfully", lpImageName);
+	K22_I("File '%s' %s successfully", lpImageName, fPatch ? "patched" : "unpatched");
 	CloseHandle(hFile);
 
 	return 0;

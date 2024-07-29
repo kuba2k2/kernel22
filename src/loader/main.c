@@ -32,7 +32,7 @@ BOOL LoaderMain() {
 
 	if (!K22PatchImportTableProcess(K22_SOURCE_LOADER, hProcess, lpImageBase))
 		return FALSE;
-	if (!K22ClearBoundImportTableProcess(hProcess, lpImageBase))
+	if (!K22PatchBoundImportTableProcess(TRUE, hProcess, lpImageBase))
 		return FALSE;
 
 	K22_I("Process patched successfully");
