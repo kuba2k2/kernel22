@@ -2,7 +2,7 @@
 
 #include "kernel22.h"
 
-BOOL K22PatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor) {
+BOOL K22ProcessPatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor) {
 	HANDLE hKernel32	   = GetModuleHandle("kernel32.dll");
 	HANDLE hCurrentProcess = GetCurrentProcess();
 
@@ -60,5 +60,20 @@ BOOL K22PatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor) {
 
 	if (!(fMajorFound && fMinorFound))
 		RETURN_K22_E("Couldn't find KUSER_SHARED_DATA refs in kernel32: %d/%d", fMajorFound, fMinorFound);
+	return TRUE;
+}
+
+BOOL K22ProcessReadPeb(HANDLE hProcess, PPEB pPeb) {
+	PROCESS_BASIC_INFORMATION stProcessBasicInformation;
+	if (!NT_SUCCESS(NtQueryInformationProcess(
+			hProcess,
+			ProcessBasicInformation,
+			&stProcessBasicInformation,
+			sizeof(stProcessBasicInformation),
+			NULL
+		)))
+		RETURN_K22_F_ERR("Couldn't read process basic information");
+	if (!K22ReadProcessMemory(hProcess, stProcessBasicInformation.PebBaseAddress, 0, *pPeb))
+		RETURN_K22_F_ERR("Couldn't read PEB");
 	return TRUE;
 }

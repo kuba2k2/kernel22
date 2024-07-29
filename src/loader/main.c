@@ -9,37 +9,52 @@ BOOL LoaderMain() {
 	K22_I("Application path: '%s'", lpApplicationPath);
 	K22_I("Command line: '%s'", lpCommandLine);
 
-	if (!K22PatchVersionCheck(11, 0))
+	if (!K22ProcessPatchVersionCheck(11, 0))
 		return FALSE;
 	K22_I("PE image version check patched");
 
 	PROCESS_INFORMATION stProcessInformation;
 	if (!K22CreateProcess(lpApplicationPath, lpCommandLine, &stProcessInformation))
 		return FALSE;
-	K22_I("Created process: PID=%d, TID=%d", stProcessInformation.dwProcessId, stProcessInformation.dwThreadId);
 
-#if K22_LOADER_DEBUGGER
-	if (!K22DebugProcess(stProcessInformation.hProcess, stProcessInformation.hThread))
+	HANDLE hProcess = stProcessInformation.hProcess;
+	HANDLE hThread	= stProcessInformation.hThread;
+	PEB stPeb;
+	if (!K22ProcessReadPeb(hProcess, &stPeb))
 		return FALSE;
-	K22_I("Debugging finished");
-#else
-	if (!K22RemoteAttachToProcess(stProcessInformation.hProcess))
-		return FALSE;
-	K22_I("Attached K22 Core to process");
+	LPVOID lpImageBase = stPeb.ImageBaseAddress;
+	K22_I(
+		"Created process: PID=%d, TID=%d, base=%p",
+		stProcessInformation.dwProcessId,
+		stProcessInformation.dwThreadId,
+		lpImageBase
+	);
 
-	if (ResumeThread(stProcessInformation.hThread) == -1)
+	if (!K22PatchImportTableProcess(K22_SOURCE_LOADER, hProcess, lpImageBase))
+		return FALSE;
+	if (!K22ClearBoundImportTableProcess(hProcess, lpImageBase))
+		return FALSE;
+
+	K22_I("Process patched successfully");
+	if (ResumeThread(hThread) == -1)
 		RETURN_K22_F_ERR("Couldn't resume main thread");
 	K22_I("Main thread resumed");
+
+#if K22_LOADER_DEBUGGER
+	K22_I("Debugging started");
+	if (!K22DebugProcess(hProcess, hThread))
+		return FALSE;
+	K22_I("Debugging finished");
 #endif
 
-	DWORD dwReturnCode = WaitForSingleObject(stProcessInformation.hProcess, 100);
+	DWORD dwReturnCode = WaitForSingleObject(hProcess, 100);
 	if (dwReturnCode != WAIT_TIMEOUT)
 		K22_W("Process ended with return code %lu", dwReturnCode);
 	else
 		K22_I("Process detached");
 
-	CloseHandle(stProcessInformation.hProcess);
-	CloseHandle(stProcessInformation.hThread);
+	CloseHandle(hProcess);
+	CloseHandle(hThread);
 
 	return TRUE;
 }

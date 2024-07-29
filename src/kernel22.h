@@ -62,10 +62,9 @@ K22_CORE_PROC BOOL K22ClearBoundImportTableProcess(HANDLE hProcess, LPVOID lpIma
 K22_CORE_PROC BOOL K22ClearBoundImportTableFile(HANDLE hFile);
 // k22_image_restore.c
 K22_CORE_PROC BOOL K22RestoreImportTable(LPVOID lpImageBase);
-// k22_patch.c
-K22_CORE_PROC BOOL K22PatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor);
-// k22_remote.c
-K22_CORE_PROC BOOL K22RemoteAttachToProcess(HANDLE hProcess);
+// k22_process.c
+K22_CORE_PROC BOOL K22ProcessPatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor);
+K22_CORE_PROC BOOL K22ProcessReadPeb(HANDLE hProcess, PPEB pPeb);
 // k22_utils.c
 K22_CORE_PROC VOID K22DebugPrintModules();
 K22_CORE_PROC BOOL K22DebugDumpModules(LPCSTR lpOutputDir, LPVOID lpImageBase);

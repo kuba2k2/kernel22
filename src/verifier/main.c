@@ -45,10 +45,12 @@ BOOL APIENTRY DllMain(HANDLE hDll, DWORD dwReason, PRTL_VERIFIER_PROVIDER_DESCRI
 	// set the verifier provider descriptor
 	if (ppProvider)
 		*ppProvider = &stProvider;
+
 	// patch the current process
 	if (!K22PatchImportTable(K22_SOURCE_VERIFIER, NtCurrentPeb()->ImageBaseAddress))
 		return FALSE;
 	if (!K22ClearBoundImportTable(NtCurrentPeb()->ImageBaseAddress))
 		return FALSE;
+
 	return TRUE;
 }
