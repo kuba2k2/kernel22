@@ -3,16 +3,18 @@
 #include "kernel22.h"
 
 static BOOL K22GetVersionExA(OSVERSIONINFO *osvi) {
-	osvi->dwMajorVersion = 10;
-	osvi->dwMinorVersion = 0;
-	osvi->dwBuildNumber	 = 10240;
+	GetVersionExA(osvi);
+	osvi->dwMajorVersion = 6;
+	osvi->dwMinorVersion = 1;
+	osvi->dwBuildNumber	 = 9999;
 	return TRUE;
 }
 
 static BOOL K22GetVersionExW(OSVERSIONINFOW *osvi) {
-	osvi->dwMajorVersion = 10;
-	osvi->dwMinorVersion = 0;
-	osvi->dwBuildNumber	 = 10240;
+	GetVersionExW(osvi);
+	osvi->dwMajorVersion = 6;
+	osvi->dwMinorVersion = 1;
+	osvi->dwBuildNumber	 = 9999;
 	return TRUE;
 }
 
