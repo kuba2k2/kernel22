@@ -2,7 +2,7 @@
 
 #include "kernel22.h"
 
-BOOL LoaderMain(DWORD dwCommandLineSkip, DWORD dwDebug) {
+BOOL LoaderMain(DWORD dwCommandLineSkip, DWORD dwDebug, BOOL bPatch) {
 	LPCSTR lpCommandLine = GetCommandLine();
 	while (dwCommandLineSkip--) {
 		lpCommandLine = K22SkipCommandLinePart(lpCommandLine, NULL);
@@ -43,17 +43,21 @@ BOOL LoaderMain(DWORD dwCommandLineSkip, DWORD dwDebug) {
 		lpImageBase
 	);
 
-	// let the process know it's launched via loader
-	stPeb.pUnused = (PVOID)K22_SOURCE_LOADER;
-	if (!K22ProcessWritePeb(hProcess, &stPeb))
-		return FALSE;
+	if (bPatch) {
+		// let the process know it's launched via loader
+		stPeb.pUnused = (PVOID)K22_SOURCE_LOADER;
+		if (!K22ProcessWritePeb(hProcess, &stPeb))
+			return FALSE;
+		// patch the process
+		if (!K22PatchImportTableProcess(K22_SOURCE_LOADER, hProcess, lpImageBase))
+			return FALSE;
+		if (!K22PatchBoundImportTableProcess(TRUE, hProcess, lpImageBase))
+			return FALSE;
+		K22_I("Process patched successfully");
+	} else {
+		K22_W("Process patching skipped via command line switch");
+	}
 
-	if (!K22PatchImportTableProcess(K22_SOURCE_LOADER, hProcess, lpImageBase))
-		return FALSE;
-	if (!K22PatchBoundImportTableProcess(TRUE, hProcess, lpImageBase))
-		return FALSE;
-
-	K22_I("Process patched successfully");
 	if (ResumeThread(hThread) == -1)
 		RETURN_K22_F_ERR("Couldn't resume main thread");
 	K22_I("Main thread resumed");
@@ -89,16 +93,20 @@ BOOL LoaderHelp(LPCSTR lpProgramName) {
 	printf(
 		"Runs an .EXE program with K22 Core DLL.\n"
 		"\n"
-		"%s [/D | /-D] program [arguments]\n"
+		"%s [/D | /-D] [/N] program [arguments]\n"
 		"\n"
 		"    filename    Specifies the program to run.\n"
 		"    arguments   Allows to pass command line arguments.\n"
 		"    /D          Enables the built-in program debugger.\n"
 		"    /-D         Disables the built-in program debugger.\n"
+		"    /N          Avoid patching the target process.\n"
 		"    /?          Shows this help message.\n"
 		"\n"
 		"The switch /D or /-D allows to enable/disable the debugger,\n"
 		"regardless of the global registry setting.\n"
+		"\n"
+		"Combined with /N, the /-D switch will make the loader act\n"
+		"as a simple program debugger, without actually loading the K22 Core.\n"
 		"\n"
 		"All switches must precede the program name and arguments.\n",
 		lpProgramName
@@ -108,17 +116,20 @@ BOOL LoaderHelp(LPCSTR lpProgramName) {
 
 int main(int argc, const char *argv[]) {
 	DWORD dwDebug = -1;
+	BOOL bPatch	  = TRUE;
 
 	for (int i = 1; i < argc; i++) {
 		if (_stricmp(argv[i], "/D") == 0)
 			dwDebug = 1;
 		else if (_stricmp(argv[i], "/-D") == 0)
 			dwDebug = 0;
+		else if (_stricmp(argv[i], "/N") == 0)
+			bPatch = FALSE;
 		else if (argv[i][0] == '/')
 			return !LoaderHelp(argv[0]);
 		else
 			// finish parsing on first non-switch argument
-			return !LoaderMain(i, dwDebug);
+			return !LoaderMain(i, dwDebug, bPatch);
 	}
 
 	// program name not found
