@@ -50,6 +50,11 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 
 		PULONG_PTR pThunk	  = RVA(pImportDesc->FirstThunk);
 		PULONG_PTR pOrigThunk = RVA(pImportDesc->OriginalFirstThunk);
+		if (pImportDesc->OriginalFirstThunk == 0)
+			// apparently OFT can be NULL... in this case just use FTs instead
+			// see: HWiNFO64.EXE
+			pOrigThunk = pThunk;
+
 		for (/**/; *pThunk != 0 && *pOrigThunk != 0; pThunk++, pOrigThunk++) {
 			PVOID pProcAddress;
 			if (IMAGE_SNAP_BY_ORDINAL(*pOrigThunk)) {
