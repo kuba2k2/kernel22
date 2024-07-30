@@ -51,8 +51,6 @@ BOOL LoaderMain(DWORD dwCommandLineSkip, DWORD dwDebug, BOOL bPatch) {
 		// patch the process
 		if (!K22PatchImportTableProcess(K22_SOURCE_LOADER, hProcess, lpImageBase))
 			return FALSE;
-		if (!K22PatchBoundImportTableProcess(TRUE, hProcess, lpImageBase))
-			return FALSE;
 		K22_I("Process patched successfully");
 	} else {
 		K22_W("Process patching skipped via command line switch");

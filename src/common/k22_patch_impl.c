@@ -2,9 +2,16 @@
 
 #include "kernel22.h"
 
+static CHAR szDosStub[] = "\x0E\x1F\xBA\x0E\x00\xB4\x09\xCD"
+						  "\x21\xB8\x01\x4C\xCD\x21"
+						  "This program cannot be run in DOS mode."
+						  "\r\r\n"
+						  "\x24\x00\x00\x00\x00\x00\x00\x00";
+
 BOOL K22PatchImportTableImpl(
 	BYTE bSource,
 	PIMAGE_K22_HEADER pK22Header,
+	PIMAGE_NT_HEADERS3264 pNt,
 	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor,
 	PULONGLONG pFirstThunk
 ) {
@@ -26,21 +33,22 @@ BOOL K22PatchImportTableImpl(
 	// otherwise write the patch cookie
 	RtlCopyMemory(pK22Header->bCookie, K22_COOKIE, 3);
 
-	// copy original import directory
-	pK22Header->stOrigImportDescriptor[0] = pImportDescriptor[0];
-	pK22Header->stOrigImportDescriptor[1] = pImportDescriptor[1];
-	pK22Header->ullOrigFirstThunk[0]	  = pFirstThunk[0];
-	pK22Header->ullOrigFirstThunk[1]	  = pFirstThunk[1];
+	// backup original import directory
+	pK22Header->stOrigImportDescriptor = pImportDescriptor[0];
+	pK22Header->dwOrigDescriptorFT	   = pImportDescriptor[1].FirstThunk;
+	pK22Header->ullOrigFirstThunk[0]   = pFirstThunk[0];
+	pK22Header->ullOrigFirstThunk[1]   = pFirstThunk[1];
 
 	// clear the import directory
-	RtlZeroMemory((PVOID)pImportDescriptor, sizeof(*pImportDescriptor) * 2);
+	RtlZeroMemory((PVOID)pImportDescriptor, sizeof(pImportDescriptor[0]));
+	pImportDescriptor[1].FirstThunk = 0;
 	RtlZeroMemory((PVOID)pFirstThunk, sizeof(*pFirstThunk) * 2);
 
 	// rebuild the first import descriptor
 	// point to name in DOS header
 	pImportDescriptor->Name = (ULONG_PTR)&pK22Header->szModuleName - (ULONG_PTR)pK22Header;
 	// point to original FT
-	pImportDescriptor->FirstThunk = pK22Header->stOrigImportDescriptor[0].FirstThunk;
+	pImportDescriptor->FirstThunk = pK22Header->stOrigImportDescriptor.FirstThunk;
 	// overwrite the original FT, point to name in DOS header
 	pFirstThunk[0] = (ULONG_PTR)&pK22Header->wSymbolHint - (ULONG_PTR)pK22Header;
 
@@ -49,11 +57,25 @@ BOOL K22PatchImportTableImpl(
 	RtlCopyMemory(pK22Header->szSymbolName, K22_LOAD_SYMBOL, sizeof(K22_LOAD_SYMBOL));
 	pK22Header->wSymbolHint = 0;
 
+	// backup the bound import directory
+	PIMAGE_DATA_DIRECTORY pDataDirectory;
+	if (pNt->stNt64.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+		pDataDirectory = &pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
+	} else if (pNt->stNt32.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+		pDataDirectory = &pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
+	} else {
+		RETURN_K22_F("Unrecognized OptionalHeader magic %04X", pNt->stNt32.OptionalHeader.Magic);
+	}
+	pK22Header->stOrigBoundImportDirectory = *pDataDirectory;
+	pDataDirectory->VirtualAddress		   = 0;
+	pDataDirectory->Size				   = 0;
+
 	return TRUE;
 }
 
 BOOL K22RestoreImportTableImpl(
 	PIMAGE_K22_HEADER pK22Header,
+	PIMAGE_NT_HEADERS3264 pNt,
 	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor,
 	PULONGLONG pFirstThunk
 ) {
@@ -75,30 +97,21 @@ BOOL K22RestoreImportTableImpl(
 	// clear the load source
 	pK22Header->bSource = K22_SOURCE_NONE;
 
-	// restore the import directory
-	pImportDescriptor[0] = pK22Header->stOrigImportDescriptor[0];
-	pImportDescriptor[1] = pK22Header->stOrigImportDescriptor[1];
-	pFirstThunk[0]		 = pK22Header->ullOrigFirstThunk[0];
-	pFirstThunk[1]		 = pK22Header->ullOrigFirstThunk[1];
+	// restore original import directory
+	pImportDescriptor[0]			= pK22Header->stOrigImportDescriptor;
+	pImportDescriptor[1].FirstThunk = pK22Header->dwOrigDescriptorFT;
+	pFirstThunk[0]					= pK22Header->ullOrigFirstThunk[0];
+	pFirstThunk[1]					= pK22Header->ullOrigFirstThunk[1];
 
 	// clear the header
-	RtlZeroMemory(pK22Header->stOrigImportDescriptor, sizeof(*pK22Header->stOrigImportDescriptor) * 2);
+	RtlZeroMemory(&pK22Header->stOrigImportDescriptor, sizeof(pK22Header->stOrigImportDescriptor));
+	pK22Header->dwOrigDescriptorFT = 0;
 	RtlZeroMemory(pK22Header->ullOrigFirstThunk, sizeof(*pK22Header->ullOrigFirstThunk) * 2);
 	RtlZeroMemory(pK22Header->szModuleName, sizeof(K22_CORE_DLL));
 	RtlZeroMemory(pK22Header->szSymbolName, sizeof(K22_LOAD_SYMBOL));
 	pK22Header->wSymbolHint = 0;
 
-	// write back a dummy DOS stub
-	RtlCopyMemory(
-		pK22Header->bDosStub1,
-		"\x0E\x1F\xBA\x0E\x00\xB4\x09\xCD\x21\xB8\x01\x4C\xCD\x21This program cannot be run in DOS mode.\r\r\n",
-		sizeof(pK22Header->bDosStub1)
-	);
-
-	return TRUE;
-}
-
-BOOL K22PatchBoundImportTableImpl(PIMAGE_K22_HEADER pK22Header, PIMAGE_NT_HEADERS3264 pNt) {
+	// restore the bound import directory
 	PIMAGE_DATA_DIRECTORY pDataDirectory;
 	if (pNt->stNt64.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
 		pDataDirectory = &pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
@@ -107,36 +120,12 @@ BOOL K22PatchBoundImportTableImpl(PIMAGE_K22_HEADER pK22Header, PIMAGE_NT_HEADER
 	} else {
 		RETURN_K22_F("Unrecognized OptionalHeader magic %04X", pNt->stNt32.OptionalHeader.Magic);
 	}
-
-	// copy and patch the bound import directory
-	if (pDataDirectory->VirtualAddress && pDataDirectory->Size) {
-		pK22Header->stOrigBoundImportDirectory = *pDataDirectory;
-		pDataDirectory->VirtualAddress		   = 0;
-		pDataDirectory->Size				   = 0;
-	}
-
-	return TRUE;
-}
-
-BOOL K22RestoreBoundImportTableImpl(PIMAGE_K22_HEADER pK22Header, PIMAGE_NT_HEADERS3264 pNt) {
-	PIMAGE_DATA_DIRECTORY pDataDirectory;
-	if (pNt->stNt64.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
-		pDataDirectory = &pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
-	} else if (pNt->stNt32.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
-		pDataDirectory = &pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
-	} else {
-		RETURN_K22_F("Unrecognized OptionalHeader magic %04X", pNt->stNt32.OptionalHeader.Magic);
-	}
-
-	// restore the bound import directory and clear the header
-	if (pK22Header->stOrigBoundImportDirectory.VirtualAddress && pK22Header->stOrigBoundImportDirectory.Size) {
-		*pDataDirectory										  = pK22Header->stOrigBoundImportDirectory;
-		pK22Header->stOrigBoundImportDirectory.VirtualAddress = 0;
-		pK22Header->stOrigBoundImportDirectory.Size			  = 0;
-	}
+	*pDataDirectory										  = pK22Header->stOrigBoundImportDirectory;
+	pK22Header->stOrigBoundImportDirectory.VirtualAddress = 0;
+	pK22Header->stOrigBoundImportDirectory.Size			  = 0;
 
 	// write back a dummy DOS stub
-	RtlCopyMemory(pK22Header->bDosStub2, "\x24\x00\x00\x00\x00\x00\x00\x00", sizeof(pK22Header->bDosStub2));
+	RtlCopyMemory(pK22Header->bDosStub, szDosStub, sizeof(pK22Header->bDosStub));
 
 	return TRUE;
 }

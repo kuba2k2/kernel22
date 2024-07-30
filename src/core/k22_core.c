@@ -84,7 +84,7 @@ static VOID K22CoreDllNotification(DWORD dwReason, PLDR_DLL_NOTIFICATION_DATA pD
 				pData->Loaded.BaseDllName->Buffer,
 				pLdrEntry->EntryPoint
 			);
-			if (!K22PatchBoundImportTable(TRUE, pData->Loaded.DllBase)) {
+			if (!K22ClearBoundImportTable(pData->Loaded.DllBase)) {
 				K22_F(
 					"Couldn't clear bound import table of %ls (%p)",
 					pData->Loaded.BaseDllName->Buffer,

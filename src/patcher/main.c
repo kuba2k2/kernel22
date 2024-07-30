@@ -12,8 +12,6 @@ BOOL PatcherMain(LPCSTR lpImageName, BOOL fPatch) {
 
 	if (!K22PatchImportTableFile(fPatch ? K22_SOURCE_PATCHER : K22_SOURCE_NONE, hFile))
 		goto error;
-	if (!K22PatchBoundImportTableFile(fPatch, hFile))
-		goto error;
 
 	K22_I("File '%s' %s successfully", lpImageName, fPatch ? "patched" : "unpatched");
 

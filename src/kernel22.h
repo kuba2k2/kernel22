@@ -60,9 +60,7 @@ K22_CORE_PROC VOID K22HexDumpProcess(HANDLE hProcess, LPCVOID lpAddress, SIZE_T 
 K22_CORE_PROC BOOL K22PatchImportTable(BYTE bSource, LPVOID lpImageBase);
 K22_CORE_PROC BOOL K22PatchImportTableProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBase);
 K22_CORE_PROC BOOL K22PatchImportTableFile(BYTE bSource, HANDLE hFile);
-K22_CORE_PROC BOOL K22PatchBoundImportTable(BOOL fPatch, LPVOID lpImageBase);
-K22_CORE_PROC BOOL K22PatchBoundImportTableProcess(BOOL fPatch, HANDLE hProcess, LPVOID lpImageBase);
-K22_CORE_PROC BOOL K22PatchBoundImportTableFile(BOOL fPatch, HANDLE hFile);
+K22_CORE_PROC BOOL K22ClearBoundImportTable(LPVOID lpImageBase);
 // k22_process.c
 K22_CORE_PROC BOOL K22ProcessPatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor);
 K22_CORE_PROC BOOL K22ProcessReadPeb(HANDLE hProcess, PPEB pPeb);

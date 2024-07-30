@@ -30,15 +30,13 @@ typedef struct {
 	// used for backups of the image import headers
 	union {
 		struct {
-			IMAGE_IMPORT_DESCRIPTOR stOrigImportDescriptor[2];
+			IMAGE_IMPORT_DESCRIPTOR stOrigImportDescriptor;
+			DWORD dwOrigDescriptorFT;
 			ULONGLONG ullOrigFirstThunk[2];
 			IMAGE_DATA_DIRECTORY stOrigBoundImportDirectory;
 		};
 
-		struct {
-			BYTE bDosStub1[56];
-			BYTE bDosStub2[8];
-		};
+		BYTE bDosStub[48];
 	};
 } IMAGE_K22_HEADER, *PIMAGE_K22_HEADER;
 
@@ -57,6 +55,6 @@ typedef struct {
 #define K22_CORE_MAGIC 0x0032324b
 
 static VOID BuildBugCheck() {
-	BUILD_BUG_ON(sizeof(IMAGE_K22_HEADER) != 128);
+	BUILD_BUG_ON(sizeof(IMAGE_K22_HEADER) != 112);
 	BUILD_BUG_ON(sizeof(K22_LOAD_SYMBOL) != 6);
 }
