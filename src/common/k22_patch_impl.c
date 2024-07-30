@@ -99,38 +99,41 @@ BOOL K22RestoreImportTableImpl(
 }
 
 BOOL K22PatchBoundImportTableImpl(PIMAGE_K22_HEADER pK22Header, PIMAGE_NT_HEADERS3264 pNt) {
-	// copy and patch the bound import directory
+	PIMAGE_DATA_DIRECTORY pDataDirectory;
 	if (pNt->stNt64.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
-		pK22Header->stOrigBoundImportDirectory =
-			pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
-		pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].VirtualAddress = 0;
-		pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size			= 0;
+		pDataDirectory = &pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
 	} else if (pNt->stNt32.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
-		pK22Header->stOrigBoundImportDirectory =
-			pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
-		pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].VirtualAddress = 0;
-		pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size			= 0;
+		pDataDirectory = &pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
 	} else {
 		RETURN_K22_F("Unrecognized OptionalHeader magic %04X", pNt->stNt32.OptionalHeader.Magic);
 	}
+
+	// copy and patch the bound import directory
+	if (pDataDirectory->VirtualAddress && pDataDirectory->Size) {
+		pK22Header->stOrigBoundImportDirectory = *pDataDirectory;
+		pDataDirectory->VirtualAddress		   = 0;
+		pDataDirectory->Size				   = 0;
+	}
+
 	return TRUE;
 }
 
 BOOL K22RestoreBoundImportTableImpl(PIMAGE_K22_HEADER pK22Header, PIMAGE_NT_HEADERS3264 pNt) {
-	// restore the bound import directory
+	PIMAGE_DATA_DIRECTORY pDataDirectory;
 	if (pNt->stNt64.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
-		pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT] =
-			pK22Header->stOrigBoundImportDirectory;
+		pDataDirectory = &pNt->stNt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
 	} else if (pNt->stNt32.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
-		pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT] =
-			pK22Header->stOrigBoundImportDirectory;
+		pDataDirectory = &pNt->stNt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
 	} else {
 		RETURN_K22_F("Unrecognized OptionalHeader magic %04X", pNt->stNt32.OptionalHeader.Magic);
 	}
 
-	// clear the header
-	pK22Header->stOrigBoundImportDirectory.VirtualAddress = 0;
-	pK22Header->stOrigBoundImportDirectory.Size			  = 0;
+	// restore the bound import directory and clear the header
+	if (pK22Header->stOrigBoundImportDirectory.VirtualAddress && pK22Header->stOrigBoundImportDirectory.Size) {
+		*pDataDirectory										  = pK22Header->stOrigBoundImportDirectory;
+		pK22Header->stOrigBoundImportDirectory.VirtualAddress = 0;
+		pK22Header->stOrigBoundImportDirectory.Size			  = 0;
+	}
 
 	// write back a dummy DOS stub
 	RtlCopyMemory(pK22Header->bDosStub2, "\x24\x00\x00\x00\x00\x00\x00\x00", sizeof(pK22Header->bDosStub2));
