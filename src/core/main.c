@@ -5,7 +5,7 @@
 // dummy function used to import Core DLL
 K22_CORE_PROC VOID DllLd() {}
 
-static BOOL DllInitialize(HANDLE hDll) {
+static BOOL DllInitialize(HANDLE hDll, LPVOID lpContext) {
 	LPVOID lpProcessBase = GetModuleHandle(NULL);
 
 	// ignore processes not patched by K22 Core
@@ -13,7 +13,7 @@ static BOOL DllInitialize(HANDLE hDll) {
 	if (memcmp(pK22Header->bCookie, K22_COOKIE, 3) != 0)
 		return TRUE;
 
-	return K22CoreMain(pK22Header);
+	return K22CoreMain(pK22Header, lpContext);
 }
 
 static VOID DllError() {
@@ -28,11 +28,11 @@ static VOID DllError() {
 #pragma ide diagnostic ignored "ConstantFunctionResult"
 #pragma ide diagnostic ignored "ConstantConditionsOC"
 
-BOOL APIENTRY DllMain(HANDLE hDll, DWORD dwReason, LPVOID lpReserved) {
+BOOL APIENTRY DllMain(HANDLE hDll, DWORD dwReason, LPVOID lpContext) {
 	// ignore any other events
 	if (dwReason != DLL_PROCESS_ATTACH)
 		return TRUE;
-	if (!DllInitialize(hDll)) {
+	if (!DllInitialize(hDll, lpContext)) {
 		DllError();
 		return FALSE;
 	}

@@ -4,7 +4,7 @@
 
 static VOID K22CoreDllNotification(DWORD dwReason, PLDR_DLL_NOTIFICATION_DATA pData, PVOID pContext);
 
-BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
+BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext) {
 	K22_I("Kernel22 Core starting");
 
 	// initialize the global data structure
@@ -13,6 +13,7 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
 
 	K22_I("Load Source: %c", pK22Header->bSource);
 	K22_I("Process Name: %s", pK22Data->lpProcessName);
+	K22_I("Context: %p", lpContext);
 
 	// read configuration from registry
 	K22_I("Reading configuration");
@@ -43,6 +44,7 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
 	PVOID pCookie;
 	if (pK22Data->stConfig.dwDllNotificationMode == 2) {
 		K22_W("DLL notification callback disabled by registry setting");
+		K22_W("Entry points of imported DLL modules will NOT have lpContext");
 	} else {
 		K22_I("Registering DLL notification callback");
 		if (LdrRegisterDllNotification(0, K22CoreDllNotification, NULL, &pCookie) != ERROR_SUCCESS)
@@ -52,14 +54,13 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
 	// don't call any initialization routines during resolving of static dependencies
 	pK22Data->fDelayDllInit = TRUE;
 	// process static dependencies of the current process
-	K22DebugPrintModules();
 	if (!K22ProcessImports(pK22Data->lpProcessBase))
 		return FALSE;
 	// static dependencies are resolved, call init routines normally from now on
 	pK22Data->fDelayDllInit = FALSE;
-	// finally call all delayed init routines
-	K22DebugPrintModules();
-	if (!K22CallInitRoutines())
+	// finally call all delayed init routines - also pass lpContext received from ntdll
+	// - some DLLs (e.g. msys-2.0.dll) use this to determine if they were linked statically or dynamically
+	if (!K22CallInitRoutines(lpContext))
 		return FALSE;
 
 	if (pK22Data->stConfig.dwDllNotificationMode == 1) {
@@ -68,7 +69,6 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
 			RETURN_K22_F_ERR("Couldn't unregister DLL notification");
 	}
 
-	K22DebugPrintModules();
 	K22_I("Kernel22 Core initialized, resuming process");
 
 	return TRUE;

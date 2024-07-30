@@ -56,4 +56,4 @@ NTSTATUS(NTAPI *LdrRegisterDllNotification)
 NTSTATUS(NTAPI *LdrUnregisterDllNotification)
 (PVOID Cookie);
 
-typedef BOOL (*PDLL_INIT_ROUTINE)(HANDLE hDll, DWORD dwReason, LPVOID lpReserved);
+typedef BOOL (*PDLL_INIT_ROUTINE)(HANDLE hDll, DWORD dwReason, LPVOID lpContext);

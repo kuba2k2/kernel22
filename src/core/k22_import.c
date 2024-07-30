@@ -32,11 +32,15 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 	// This makes LoadLibrary() call user32's initialization routine, which expects gdi32.dll
 	// to be fully resolved, which isn't the case.
 
-	// To fix it, let's clear the entry point of all DLLs loaded "in a controlled manner"
-	// (e.g. during process initialization, or in hooked LoadLibrary() calls)
-	if (pK22Data->fDelayDllInit && !pK22ModuleData->fIsProcess && pK22ModuleData->pLdrEntry->EntryPoint) {
+	// To fix it, let's disable the entry point of all DLLs that are loaded "in a controlled manner"
+	// (e.g. during process initialization, or in hooked LoadLibrary() calls).
+	// The entry point is replaced with a dummy method, instead of NULL, which will
+	// (hopefully) allow ntdll to call TLS initializers.
+	if (pK22Data->fDelayDllInit && !pK22ModuleData->fIsProcess && pK22ModuleData->pLdrEntry->EntryPoint &&
+		pK22ModuleData->pLdrEntry->EntryPoint != K22DummyEntryPoint) {
+		// keep the original one and replace it
 		pK22ModuleData->lpDelayedInitRoutine  = pK22ModuleData->pLdrEntry->EntryPoint;
-		pK22ModuleData->pLdrEntry->EntryPoint = NULL;
+		pK22ModuleData->pLdrEntry->EntryPoint = K22DummyEntryPoint;
 	}
 
 	// process each import descriptor
@@ -95,7 +99,7 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 	return TRUE;
 }
 
-BOOL K22CallInitRoutines() {
+BOOL K22CallInitRoutines(LPVOID lpContext) {
 	K22_LDR_ENUM(pLdrEntry, InInitializationOrderModuleList, InInitializationOrderLinks) {
 		PK22_MODULE_DATA pK22ModuleData = K22DataGetModule(pLdrEntry->DllBase);
 		if (!pK22ModuleData->lpDelayedInitRoutine)
@@ -105,10 +109,14 @@ BOOL K22CallInitRoutines() {
 			pK22ModuleData->lpModuleName,
 			pK22ModuleData->lpDelayedInitRoutine
 		);
-		(pK22ModuleData->lpDelayedInitRoutine)((pK22ModuleData->pLdrEntry->DllBase), (DLL_PROCESS_ATTACH), (NULL));
+		(pK22ModuleData->lpDelayedInitRoutine)(pK22ModuleData->pLdrEntry->DllBase, DLL_PROCESS_ATTACH, lpContext);
 		// restore the original entry point (for DLL unload, etc.)
 		pK22ModuleData->pLdrEntry->EntryPoint = pK22ModuleData->lpDelayedInitRoutine;
 		pK22ModuleData->lpDelayedInitRoutine  = NULL;
 	}
+	return TRUE;
+}
+
+BOOL K22DummyEntryPoint(HANDLE hDll, DWORD dwReason, LPVOID lpContext) {
 	return TRUE;
 }

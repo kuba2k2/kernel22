@@ -74,7 +74,7 @@ K22_CORE_PROC BOOL K22ProcessWritePeb(HANDLE hProcess, PPEB pPeb);
 // k22_config.c
 BOOL K22ConfigRead();
 // k22_core.c
-BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header);
+BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext);
 // k22_data.c
 PK22_DATA K22DataGet();
 PK22_MODULE_DATA K22DataGetModule(LPVOID lpImageBase);
@@ -86,7 +86,8 @@ BOOL K22StringDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
 BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR *ppSymbol);
 // k22_import.c
 BOOL K22ProcessImports(LPVOID lpImageBase);
-BOOL K22CallInitRoutines();
+BOOL K22CallInitRoutines(LPVOID lpContext);
+BOOL K22DummyEntryPoint(HANDLE hDll, DWORD dwReason, LPVOID lpContext);
 // k22_resolve.c
 PVOID K22ResolveSymbol(LPCSTR lpDllName, LPCSTR lpSymbolName, ULONG_PTR ulSymbolOrdinal);
 // k22_utils.c
