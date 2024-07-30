@@ -82,7 +82,13 @@ static DWORD K22Printf(LPCSTR lpFormat, ...) {
 }
 
 VOID K22LogWrite(
-	DWORD dwLevel, LPCSTR lpFile, DWORD dwLine, LPCSTR lpFunction, DWORD dwWin32Error, LPCSTR lpFormat, ...
+	DWORD dwLevel,
+	LPCSTR lpFile,
+	DWORD dwLine,
+	LPCSTR lpFunction,
+	DWORD dwWin32Error,
+	LPCSTR lpFormat,
+	...
 ) {
 #if K22_LOGGER_COLOR
 	TCHAR cBright = (TCHAR)('0' + (adwColors[dwLevel] >> 4));

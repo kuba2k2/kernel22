@@ -3,7 +3,10 @@
 #include "kernel22.h"
 
 BOOL K22PatchImportTableImpl(
-	BYTE bSource, PIMAGE_K22_HEADER pK22Header, PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor, PULONGLONG pFirstThunk
+	BYTE bSource,
+	PIMAGE_K22_HEADER pK22Header,
+	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor,
+	PULONGLONG pFirstThunk
 ) {
 	// make sure there's enough room in the DOS stub
 	if (pK22Header->dwPeRva < sizeof(*pK22Header))
@@ -50,7 +53,9 @@ BOOL K22PatchImportTableImpl(
 }
 
 BOOL K22RestoreImportTableImpl(
-	PIMAGE_K22_HEADER pK22Header, PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor, PULONGLONG pFirstThunk
+	PIMAGE_K22_HEADER pK22Header,
+	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor,
+	PULONGLONG pFirstThunk
 ) {
 	// make sure there's enough room in the DOS stub
 	if (pK22Header->dwPeRva < sizeof(*pK22Header))

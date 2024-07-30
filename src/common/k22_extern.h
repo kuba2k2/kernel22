@@ -45,7 +45,9 @@ typedef union {
 #define LDR_DLL_NOTIFICATION_REASON_UNLOADED 2
 
 typedef VOID(CALLBACK *PLDR_DLL_NOTIFICATION_FUNCTION)(
-	ULONG NotificationReason, PLDR_DLL_NOTIFICATION_DATA NotificationData, PVOID Context
+	ULONG NotificationReason,
+	PLDR_DLL_NOTIFICATION_DATA NotificationData,
+	PVOID Context
 );
 
 NTSTATUS(NTAPI *LdrRegisterDllNotification)

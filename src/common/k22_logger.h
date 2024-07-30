@@ -19,7 +19,13 @@
 #endif
 
 K22_CORE_PROC VOID K22LogWrite(
-	DWORD dwLevel, LPCSTR lpFile, DWORD dwLine, LPCSTR lpFunction, DWORD dwWin32Error, LPCSTR lpFormat, ...
+	DWORD dwLevel,
+	LPCSTR lpFile,
+	DWORD dwLine,
+	LPCSTR lpFunction,
+	DWORD dwWin32Error,
+	LPCSTR lpFormat,
+	...
 ); // __attribute__((format(printf, 6, 7)));
 
 #if K22_LEVEL_TRACE >= K22_LOGLEVEL

@@ -3,10 +3,15 @@
 #include "kernel22.h"
 
 extern BOOL K22PatchImportTableImpl(
-	BYTE bSource, PIMAGE_K22_HEADER pK22Header, PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor, PULONGLONG pFirstThunk
+	BYTE bSource,
+	PIMAGE_K22_HEADER pK22Header,
+	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor,
+	PULONGLONG pFirstThunk
 );
 extern BOOL K22RestoreImportTableImpl(
-	PIMAGE_K22_HEADER pK22Header, PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor, PULONGLONG pFirstThunk
+	PIMAGE_K22_HEADER pK22Header,
+	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor,
+	PULONGLONG pFirstThunk
 );
 extern BOOL K22PatchBoundImportTableImpl(PIMAGE_K22_HEADER pK22Header, PIMAGE_NT_HEADERS3264 pNt);
 extern BOOL K22RestoreBoundImportTableImpl(PIMAGE_K22_HEADER pK22Header, PIMAGE_NT_HEADERS3264 pNt);
