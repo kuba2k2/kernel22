@@ -29,6 +29,7 @@ typedef struct K22_DATA {
 	struct {
 		LPSTR lpInstallDir;
 		SIZE_T cchInstallDir;
+		DWORD dwDllNotificationMode;
 		PK22_DLL_EXTRA pDllExtra;
 		PK22_DLL_REDIRECT pDllRedirect;
 		PK22_DLL_REWRITE pDllRewrite;

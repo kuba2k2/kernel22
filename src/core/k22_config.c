@@ -23,6 +23,13 @@ BOOL K22ConfigRead() {
 	pK22Data->stConfig.lpInstallDir	 = _strdup(szValue);
 	pK22Data->stConfig.cchInstallDir = cbValue;
 
+	K22_REG_READ_VALUE(
+		pK22Data->stReg.hMain,
+		"DllNotificationMode",
+		&pK22Data->stConfig.dwDllNotificationMode,
+		cbValue
+	);
+
 	if (pK22Data->stConfig.pWinVer == NULL) {
 		K22_CALLOC(pK22Data->stConfig.pWinVer);
 		pK22Data->stConfig.pWinVer->stDefault.dwMajor = NtCurrentPeb()->OSMajorVersion;

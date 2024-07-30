@@ -40,10 +40,14 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
 		RETURN_K22_F_ERR("Couldn't get LdrUnregisterDllNotification address");
 
 	// register DLL notification callback
-	K22_I("Registering DLL notification callback");
 	PVOID pCookie;
-	if (LdrRegisterDllNotification(0, K22CoreDllNotification, NULL, &pCookie) != ERROR_SUCCESS)
-		RETURN_K22_F_ERR("Couldn't register DLL notification");
+	if (pK22Data->stConfig.dwDllNotificationMode == 2) {
+		K22_W("DLL notification callback disabled by registry setting");
+	} else {
+		K22_I("Registering DLL notification callback");
+		if (LdrRegisterDllNotification(0, K22CoreDllNotification, NULL, &pCookie) != ERROR_SUCCESS)
+			RETURN_K22_F_ERR("Couldn't register DLL notification");
+	}
 
 	// don't call any initialization routines during resolving of static dependencies
 	pK22Data->fDelayDllInit = TRUE;
@@ -57,6 +61,12 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header) {
 	K22DebugPrintModules();
 	if (!K22CallInitRoutines())
 		return FALSE;
+
+	if (pK22Data->stConfig.dwDllNotificationMode == 1) {
+		K22_W("Unregistering DLL notification callback by registry setting");
+		if (LdrUnregisterDllNotification(pCookie) != ERROR_SUCCESS)
+			RETURN_K22_F_ERR("Couldn't unregister DLL notification");
+	}
 
 	K22DebugPrintModules();
 	K22_I("Kernel22 Core initialized, resuming process");
