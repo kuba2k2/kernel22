@@ -77,3 +77,20 @@ BOOL K22ProcessReadPeb(HANDLE hProcess, PPEB pPeb) {
 		RETURN_K22_F_ERR("Couldn't read PEB");
 	return TRUE;
 }
+
+BOOL K22ProcessWritePeb(HANDLE hProcess, PPEB pPeb) {
+	PROCESS_BASIC_INFORMATION stProcessBasicInformation;
+	if (!NT_SUCCESS(NtQueryInformationProcess(
+			hProcess,
+			ProcessBasicInformation,
+			&stProcessBasicInformation,
+			sizeof(stProcessBasicInformation),
+			NULL
+		)))
+		RETURN_K22_F_ERR("Couldn't read process basic information");
+	K22WithUnlockedProcess(hProcess, stProcessBasicInformation.PebBaseAddress, sizeof(*pPeb)) {
+		if (!K22WriteProcessMemory(hProcess, stProcessBasicInformation.PebBaseAddress, 0, *pPeb))
+			RETURN_K22_F_ERR("Couldn't write PEB");
+	}
+	return TRUE;
+}

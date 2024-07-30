@@ -66,6 +66,7 @@ K22_CORE_PROC BOOL K22PatchBoundImportTableFile(BOOL fPatch, HANDLE hFile);
 // k22_process.c
 K22_CORE_PROC BOOL K22ProcessPatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor);
 K22_CORE_PROC BOOL K22ProcessReadPeb(HANDLE hProcess, PPEB pPeb);
+K22_CORE_PROC BOOL K22ProcessWritePeb(HANDLE hProcess, PPEB pPeb);
 
 /* Private core functions */
 

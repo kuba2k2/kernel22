@@ -43,6 +43,11 @@ BOOL LoaderMain(DWORD dwCommandLineSkip, DWORD dwDebug) {
 		lpImageBase
 	);
 
+	// let the process know it's launched via loader
+	stPeb.pUnused = (PVOID)K22_SOURCE_LOADER;
+	if (!K22ProcessWritePeb(hProcess, &stPeb))
+		return FALSE;
+
 	if (!K22PatchImportTableProcess(K22_SOURCE_LOADER, hProcess, lpImageBase))
 		return FALSE;
 	if (!K22PatchBoundImportTableProcess(TRUE, hProcess, lpImageBase))
@@ -60,11 +65,19 @@ BOOL LoaderMain(DWORD dwCommandLineSkip, DWORD dwDebug) {
 		K22_I("Debugging finished");
 	}
 
-	DWORD dwReturnCode = WaitForSingleObject(hProcess, 100);
-	if (dwReturnCode != WAIT_TIMEOUT)
-		K22_W("Process ended with return code %lu", dwReturnCode);
-	else
-		K22_I("Process detached");
+	DWORD dwEvent = WaitForSingleObject(hProcess, 500);
+	if (dwEvent != WAIT_TIMEOUT) {
+		// took less than 500 ms, the process likely crashed
+		DWORD dwExitCode = -1;
+		GetExitCodeProcess(hProcess, &dwExitCode);
+		if (dwExitCode) {
+			K22_E("Target process ended with return code 0x%lX", dwExitCode);
+		} else {
+			K22_I("Target process ended with return code 0x%lX", 0);
+		}
+	} else {
+		K22_I("Target process detached");
+	}
 
 	CloseHandle(hProcess);
 	CloseHandle(hThread);
