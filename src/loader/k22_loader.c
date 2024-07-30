@@ -52,7 +52,9 @@ LPCSTR K22SkipCommandLinePart(LPCSTR lpCommandLine, LPDWORD lpPartLength) {
 	return lpCommandLine;
 }
 
-BOOL K22CreateProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPROCESS_INFORMATION lpProcessInformation) {
+BOOL K22CreateProcess(
+	LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPROCESS_INFORMATION lpProcessInformation, BOOL bDebug
+) {
 	BOOL fResult = TRUE;
 
 	STARTUPINFOEX stStartupInfoEx;
@@ -107,11 +109,7 @@ BOOL K22CreateProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPROCESS_
 			NULL,
 			NULL,
 			TRUE,
-#if K22_LOADER_DEBUGGER
-			CREATE_SUSPENDED | DEBUG_ONLY_THIS_PROCESS | EXTENDED_STARTUPINFO_PRESENT,
-#else
-			CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT,
-#endif
+			CREATE_SUSPENDED | (bDebug ? DEBUG_ONLY_THIS_PROCESS : 0) | EXTENDED_STARTUPINFO_PRESENT,
 			NULL,
 			NULL,
 			&stStartupInfoEx.StartupInfo,
@@ -122,10 +120,10 @@ BOOL K22CreateProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPROCESS_
 		goto end;
 	}
 
-#if K22_LOADER_DEBUGGER
-	// kill the target process when something goes wrong (and the debugger exits prematurely)
-	DebugSetProcessKillOnExit(TRUE);
-#endif
+	if (bDebug) {
+		// kill the target process when something goes wrong (and the debugger exits prematurely)
+		DebugSetProcessKillOnExit(TRUE);
+	}
 
 end:
 	DeleteProcThreadAttributeList(stStartupInfoEx.lpAttributeList);

@@ -6,4 +6,6 @@
 
 LPCSTR K22GetApplicationPath(LPCSTR lpCommandLine);
 LPCSTR K22SkipCommandLinePart(LPCSTR lpCommandLine, LPDWORD lpPartLength);
-BOOL K22CreateProcess(LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPROCESS_INFORMATION lpProcessInformation);
+BOOL K22CreateProcess(
+	LPCSTR lpApplicationPath, LPCSTR lpCommandLine, LPPROCESS_INFORMATION lpProcessInformation, BOOL bDebug
+);
