@@ -31,6 +31,7 @@
 
 #include "k22_options.h"
 
+#include "k22_data.h"
 #include "k22_extern.h"
 #include "k22_logger.h"
 #include "k22_macros.h"
@@ -43,38 +44,44 @@
 
 #if K22_CORE
 #include "MinHook.h"
-#include "k22_data.h"
 #endif
 
 #if K22_VERIFIER
 #define K22LogWrite(...)
 #endif
 
-/* Public core functions */
+/* Common functions (core + verifier) */
 
-// k22_hexdump.c
-K22_CORE_PROC VOID K22HexDump(CONST BYTE *pBuf, SIZE_T cbLength, ULONGLONG ullOffset);
-K22_CORE_PROC VOID K22HexDumpProcess(HANDLE hProcess, LPCVOID lpAddress, SIZE_T cbLength);
-// k22_patch.c
+// k22_patch.c / k22_patch_impl.c
 K22_CORE_PROC BOOL K22PatchImportTable(BYTE bSource, LPVOID lpImageBase);
 K22_CORE_PROC BOOL K22PatchImportTableProcess(BYTE bSource, HANDLE hProcess, LPVOID lpImageBase);
 K22_CORE_PROC BOOL K22PatchImportTableFile(BYTE bSource, HANDLE hFile);
 K22_CORE_PROC BOOL K22ClearBoundImportTable(LPVOID lpImageBase);
+
+/* Public core functions */
+
+// k22_data_common.c
+K22_CORE_PROC PK22_DATA K22DataGet();
+K22_CORE_PROC PK22_MODULE_DATA K22DataGetModule(LPVOID lpImageBase);
+// k22_hexdump.c
+K22_CORE_PROC VOID K22HexDump(CONST BYTE *pBuf, SIZE_T cbLength, ULONGLONG ullOffset);
+K22_CORE_PROC VOID K22HexDumpProcess(HANDLE hProcess, LPCVOID lpAddress, SIZE_T cbLength);
 // k22_process.c
 K22_CORE_PROC BOOL K22ProcessPatchVersionCheck(DWORD dwNewMajor, DWORD dwNewMinor);
 K22_CORE_PROC BOOL K22ProcessReadPeb(HANDLE hProcess, PPEB pPeb);
 K22_CORE_PROC BOOL K22ProcessWritePeb(HANDLE hProcess, PPEB pPeb);
+// k22_resolve.c
+K22_CORE_PROC PVOID K22ResolveSymbol(LPCSTR lpModuleName, LPCSTR lpSymbolName, WORD wSymbolOrdinal);
+// k22_utils.c
+K22_CORE_PROC VOID K22DebugPrintModules();
+K22_CORE_PROC BOOL K22DebugDumpModules(LPCSTR lpOutputDir, LPVOID lpImageBase);
+K22_CORE_PROC PLDR_DATA_TABLE_ENTRY K22GetLdrEntry(LPVOID lpImageBase);
 
 /* Private core functions */
 
 #if K22_CORE
 // k22_core.c
 BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext);
-// k22_data_init.c
-PK22_DATA K22DataGet();
-PK22_MODULE_DATA K22DataGetModule(LPVOID lpImageBase);
-BOOL K22DataInitialize(LPVOID lpImageBase);
-BOOL K22DataInitializeModule(LPVOID lpImageBase);
 // k22_data_registry.c
 BOOL K22DataReadRegistry();
 // k22_data_utils.c
@@ -85,10 +92,4 @@ BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR
 BOOL K22ProcessImports(LPVOID lpImageBase);
 BOOL K22CallInitRoutines(LPVOID lpContext);
 BOOL K22DummyEntryPoint(HANDLE hDll, DWORD dwReason, LPVOID lpContext);
-// k22_resolve.c
-PVOID K22ResolveSymbol(LPCSTR lpModuleName, LPCSTR lpSymbolName, WORD wSymbolOrdinal);
-// k22_utils.c
-VOID K22DebugPrintModules();
-BOOL K22DebugDumpModules(LPCSTR lpOutputDir, LPVOID lpImageBase);
-PLDR_DATA_TABLE_ENTRY K22GetLdrEntry(LPVOID lpImageBase);
 #endif

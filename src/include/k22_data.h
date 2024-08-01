@@ -4,6 +4,9 @@
 
 #include "kernel22.h"
 
+#include "k22_extern.h"
+#include "k22_types.h"
+
 typedef struct K22_DATA *PK22_DATA;
 typedef struct K22_MODULE_DATA *PK22_MODULE_DATA;
 typedef struct K22_DLL_EXTRA *PK22_DLL_EXTRA;

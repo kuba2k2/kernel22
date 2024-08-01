@@ -2,6 +2,9 @@
 
 #include "kernel22.h"
 
+static BOOL K22DataInitialize(LPVOID lpImageBase);
+static BOOL K22DataInitializeModule(LPVOID lpImageBase);
+
 PK22_DATA pK22Data;
 
 PK22_DATA K22DataGet() {
@@ -17,7 +20,7 @@ PK22_MODULE_DATA K22DataGetModule(LPVOID lpImageBase) {
 	return pK22Header->lpModuleData;
 }
 
-BOOL K22DataInitialize(LPVOID lpImageBase) {
+static BOOL K22DataInitialize(LPVOID lpImageBase) {
 	if (pK22Data == NULL)
 		K22_CALLOC(pK22Data);
 
@@ -56,7 +59,7 @@ BOOL K22DataInitialize(LPVOID lpImageBase) {
 	return TRUE;
 }
 
-BOOL K22DataInitializeModule(LPVOID lpImageBase) {
+static BOOL K22DataInitializeModule(LPVOID lpImageBase) {
 	PIMAGE_K22_HEADER pK22Header = K22_DOS_HDR_DATA(lpImageBase);
 
 	PK22_MODULE_DATA pK22ModuleData;

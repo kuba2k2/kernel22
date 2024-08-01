@@ -8,7 +8,7 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext) {
 	K22_I("Kernel22 Core starting");
 
 	// initialize the global data structure
-	if (!K22DataInitialize(pK22Header))
+	if (!K22DataGet())
 		return FALSE;
 
 	K22_I("Load Source: %c", pK22Header->bSource);
