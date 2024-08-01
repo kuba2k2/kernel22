@@ -27,7 +27,7 @@ typedef struct K22_DATA {
 	};
 
 	PIMAGE_NT_HEADERS3264 pNt;
-	LPSTR lpProcessPath;
+	LPSTR lpProcessDir;
 	LPSTR lpProcessName;
 	BOOL fIs64Bit;
 	BOOL fDelayDllInit;

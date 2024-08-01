@@ -12,6 +12,7 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext) {
 		return FALSE;
 
 	K22_I("Load Source: %c", pK22Header->bSource);
+	K22_I("Process Directory: %s", pK22Data->lpProcessDir);
 	K22_I("Process Name: %s", pK22Data->lpProcessName);
 	K22_I("Context: %p", lpContext);
 

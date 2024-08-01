@@ -28,13 +28,14 @@ static BOOL K22DataInitialize(LPVOID lpImageBase) {
 	pK22Data->pNt			= RVA(pK22Data->pDosHeader->e_lfanew);
 	pK22Data->fIs64Bit		= pK22Data->pNt->stFile.Machine == IMAGE_FILE_MACHINE_AMD64;
 
-	K22_MALLOC_LENGTH(pK22Data->lpProcessPath, MAX_PATH + 1);
-	GetModuleFileName(NULL, pK22Data->lpProcessPath, MAX_PATH + 1);
-	LPSTR lpProcessName = pK22Data->lpProcessName = pK22Data->lpProcessPath;
+	K22_MALLOC_LENGTH(pK22Data->lpProcessDir, MAX_PATH + 1);
+	GetModuleFileName(NULL, pK22Data->lpProcessDir, MAX_PATH + 1);
+	LPSTR lpProcessName = pK22Data->lpProcessName = pK22Data->lpProcessDir;
 	while (*lpProcessName) {
 		if (*lpProcessName++ == '\\')
 			pK22Data->lpProcessName = lpProcessName;
 	}
+	pK22Data->lpProcessName[-1] = '\0';
 
 	// open registry keys
 	K22_REG_REQUIRE_KEY(HKEY_LOCAL_MACHINE, K22_REG_KEY_PATH, pK22Data->stReg.hMain);
