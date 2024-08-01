@@ -43,7 +43,6 @@
 
 #if K22_CORE
 #include "MinHook.h"
-#include "k22_config.h"
 #include "k22_data.h"
 #endif
 
@@ -69,16 +68,16 @@ K22_CORE_PROC BOOL K22ProcessWritePeb(HANDLE hProcess, PPEB pPeb);
 /* Private core functions */
 
 #if K22_CORE
-// k22_config.c
-BOOL K22ConfigRead();
 // k22_core.c
 BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext);
-// k22_data.c
+// k22_data_init.c
 PK22_DATA K22DataGet();
 PK22_MODULE_DATA K22DataGetModule(LPVOID lpImageBase);
 BOOL K22DataInitialize(LPVOID lpImageBase);
 BOOL K22DataInitializeModule(LPVOID lpImageBase);
-// k22_file.c
+// k22_data_registry.c
+BOOL K22DataReadRegistry();
+// k22_data_utils.c
 BOOL K22StringDup(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
 BOOL K22StringDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
 BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR *ppSymbol);
@@ -87,7 +86,7 @@ BOOL K22ProcessImports(LPVOID lpImageBase);
 BOOL K22CallInitRoutines(LPVOID lpContext);
 BOOL K22DummyEntryPoint(HANDLE hDll, DWORD dwReason, LPVOID lpContext);
 // k22_resolve.c
-PVOID K22ResolveSymbol(LPCSTR lpDllName, LPCSTR lpSymbolName, ULONG_PTR ulSymbolOrdinal);
+PVOID K22ResolveSymbol(LPCSTR lpModuleName, LPCSTR lpSymbolName, WORD wSymbolOrdinal);
 // k22_utils.c
 VOID K22DebugPrintModules();
 BOOL K22DebugDumpModules(LPCSTR lpOutputDir, LPVOID lpImageBase);

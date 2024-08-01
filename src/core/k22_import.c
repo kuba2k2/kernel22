@@ -46,7 +46,8 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 	// process each import descriptor
 	PIMAGE_IMPORT_DESCRIPTOR pImportDesc = RVA(dwImportDirectoryRva);
 	for (/**/; pImportDesc->FirstThunk; pImportDesc++) {
-		K22_D("Module %s imports %s", pK22ModuleData->lpModuleName, RVA(pImportDesc->Name));
+		LPCSTR lpImportModuleName = RVA(pImportDesc->Name);
+		K22_D("Module %s imports %s", pK22ModuleData->lpModuleName, lpImportModuleName);
 
 		PULONG_PTR pThunk	  = RVA(pImportDesc->FirstThunk);
 		PULONG_PTR pOrigThunk = RVA(pImportDesc->OriginalFirstThunk);
@@ -58,33 +59,29 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 		for (/**/; *pThunk != 0 && *pOrigThunk != 0; pThunk++, pOrigThunk++) {
 			PVOID pProcAddress;
 			if (IMAGE_SNAP_BY_ORDINAL(*pOrigThunk)) {
-				pProcAddress = K22ResolveSymbol(RVA(pImportDesc->Name), NULL, IMAGE_ORDINAL(*pOrigThunk));
+				pProcAddress = K22ResolveSymbol(lpImportModuleName, NULL, IMAGE_ORDINAL(*pOrigThunk));
 				K22_V(
 					"Module %s imports %s!#%lu -> %p",
 					pK22ModuleData->lpModuleName,
-					RVA(pImportDesc->Name),
+					lpImportModuleName,
 					IMAGE_ORDINAL(*pOrigThunk),
 					pProcAddress
 				);
 				if (pProcAddress == 0) {
-					RETURN_K22_F_ERR(
-						"Couldn't resolve symbol %s!#%lu",
-						RVA(pImportDesc->Name),
-						IMAGE_ORDINAL(*pOrigThunk)
-					);
+					RETURN_K22_F_ERR("Couldn't resolve symbol %s!#%lu", lpImportModuleName, IMAGE_ORDINAL(*pOrigThunk));
 				}
 			} else {
 				LPCSTR lpSymbolName = ((PIMAGE_IMPORT_BY_NAME)RVA(*pOrigThunk))->Name;
-				pProcAddress		= K22ResolveSymbol(RVA(pImportDesc->Name), lpSymbolName, 0);
+				pProcAddress		= K22ResolveSymbol(lpImportModuleName, lpSymbolName, 0);
 				K22_V(
 					"Module %s imports %s!%s -> %p",
 					pK22ModuleData->lpModuleName,
-					RVA(pImportDesc->Name),
+					lpImportModuleName,
 					lpSymbolName,
 					pProcAddress
 				);
 				if (pProcAddress == 0) {
-					RETURN_K22_F_ERR("Couldn't resolve symbol %s!%s", RVA(pImportDesc->Name), lpSymbolName);
+					RETURN_K22_F_ERR("Couldn't resolve symbol %s!%s", lpImportModuleName, lpSymbolName);
 				}
 			}
 

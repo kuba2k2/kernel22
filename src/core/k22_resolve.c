@@ -18,10 +18,10 @@ static BOOL K22GetVersionExW(OSVERSIONINFOW *osvi) {
 	return TRUE;
 }
 
-PVOID K22ResolveSymbol(LPCSTR lpDllName, LPCSTR lpSymbolName, ULONG_PTR ulSymbolOrdinal) {
-	HANDLE hDll = GetModuleHandle(lpDllName);
+PVOID K22ResolveSymbol(LPCSTR lpModuleName, LPCSTR lpSymbolName, WORD wSymbolOrdinal) {
+	HANDLE hDll = GetModuleHandle(lpModuleName);
 	if (hDll == NULL) {
-		hDll = LoadLibrary(lpDllName);
+		hDll = LoadLibrary(lpModuleName);
 	}
 	if (lpSymbolName) {
 		if (strcmp(lpSymbolName, "GetVersionExA") == 0)
@@ -30,5 +30,5 @@ PVOID K22ResolveSymbol(LPCSTR lpDllName, LPCSTR lpSymbolName, ULONG_PTR ulSymbol
 			return K22GetVersionExW;
 		return GetProcAddress(hDll, lpSymbolName);
 	}
-	return GetProcAddress(hDll, (PVOID)ulSymbolOrdinal);
+	return GetProcAddress(hDll, (PVOID)(ULONG_PTR)wSymbolOrdinal);
 }
