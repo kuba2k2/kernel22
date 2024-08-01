@@ -87,11 +87,11 @@ static BOOL K22DataReadDllExtra(HKEY hDllExtra) {
 			if (!K22StringDup(szName, cbName, &pDllExtra->lpKey))
 				return FALSE;
 		} else {
-			// K22_D(" - DLL Extra: will replace '%s'", pDllExtra->lpKey);
+			K22_T(" - DLL Extra: will replace '%s'", pDllExtra->lpKey);
 		}
 		if (!K22StringDupFileName(szValue, cbValue - 1, &pDllExtra->lpTargetDll))
 			return FALSE;
-		K22_D(" - DLL Extra: setting '%s' (%s)", pDllExtra->lpKey, pDllExtra->lpTargetDll);
+		K22_V(" - DLL Extra: setting '%s' (%s)", pDllExtra->lpKey, pDllExtra->lpTargetDll);
 	}
 	return TRUE;
 }
@@ -112,11 +112,11 @@ static BOOL K22DataReadDllRedirect(HKEY hDllRedirect) {
 			if (!K22StringDup(szName, cbName, &pDllRedirect->lpSourceDll))
 				return FALSE;
 		} else {
-			// K22_D(" - DLL Redirect: will replace %s", pDllRedirect->lpModuleName);
+			K22_T(" - DLL Redirect: will replace %s", pDllRedirect->lpModuleName);
 		}
 		if (!K22StringDupFileName(szValue, cbValue - 1, &pDllRedirect->lpTargetDll))
 			return FALSE;
-		K22_D(" - DLL Redirect: setting %s -> %s", pDllRedirect->lpSourceDll, pDllRedirect->lpTargetDll);
+		K22_V(" - DLL Redirect: setting %s -> %s", pDllRedirect->lpSourceDll, pDllRedirect->lpTargetDll);
 	}
 	return TRUE;
 }
@@ -142,12 +142,12 @@ static BOOL K22DataReadDllRewrite(HKEY hDllRewrite) {
 		if (K22_REG_READ_VALUE(hDllRewriteItem, NULL, szValue, cbValue)) {
 			if (!K22StringDupFileName(szValue, cbValue - 1, &pDllRewrite->lpDefaultDll))
 				return FALSE;
-			K22_D(" - DLL Rewrite: setting %s!* (missing) -> %s", pDllRewrite->lpSourceDll, pDllRewrite->lpDefaultDll);
+			K22_V(" - DLL Rewrite: setting %s!* (missing) -> %s", pDllRewrite->lpSourceDll, pDllRewrite->lpDefaultDll);
 		}
 		if (K22_REG_READ_VALUE(hDllRewriteItem, "*", szValue, cbValue)) {
 			if (!K22StringDupFileName(szValue, cbValue - 1, &pDllRewrite->lpCatchAllDll))
 				return FALSE;
-			K22_D(" - DLL Rewrite: setting %s!* (all) -> %s", pDllRewrite->lpSourceDll, pDllRewrite->lpCatchAllDll);
+			K22_V(" - DLL Rewrite: setting %s!* (all) -> %s", pDllRewrite->lpSourceDll, pDllRewrite->lpCatchAllDll);
 		}
 		K22_REG_ENUM_VALUE(hDllRewriteItem, szName, cbName, szValue, cbValue) {
 			if (szName[0] == '\0' || szName[0] == '*') // skip Default and Catch-All values
@@ -164,16 +164,19 @@ static BOOL K22DataReadDllRewrite(HKEY hDllRewrite) {
 				if (!K22StringDup(szName, cbName, &pSymbol->lpSourceSymbol))
 					return FALSE;
 			} else {
-				// K22_D(" - DLL Rewrite: will replace %s!%s", pDllRewrite->lpModuleName, pSymbol->lpSourceSymbol);
+				K22_T(" - DLL Rewrite: will replace %s!%s", pDllRewrite->lpSourceDll, pSymbol->lpSourceSymbol);
 			}
 			if (!K22StringDupDllTarget(szValue, cbValue - 1, &pSymbol->lpTargetDll, &pSymbol->lpTargetSymbol))
 				return FALSE;
-			K22_D(
+			if (pSymbol->lpTargetSymbol == NULL) {
+				pSymbol->lpTargetSymbol = pSymbol->lpSourceSymbol;
+			}
+			K22_V(
 				" - DLL Rewrite: setting %s!%s -> %s!%s",
 				pDllRewrite->lpSourceDll,
 				pSymbol->lpSourceSymbol,
 				pSymbol->lpTargetDll,
-				pSymbol->lpTargetSymbol ? pSymbol->lpTargetSymbol : pSymbol->lpSourceSymbol
+				pSymbol->lpTargetSymbol
 			);
 		}
 	}
@@ -188,7 +191,7 @@ static BOOL K22DataReadWinVer(HKEY hWinVer) {
 	K22_REG_VARS();
 
 	if (K22_REG_READ_VALUE(hWinVer, "ModeFlags", &pK22Data->stDll.pWinVer->fMode, cbValue)) {
-		K22_D(" - WinVer mode: %08lx", pK22Data->stDll.pWinVer->fMode);
+		K22_V(" - WinVer mode: %08lx", pK22Data->stDll.pWinVer->fMode);
 	}
 
 	if (K22_REG_READ_VALUE(hWinVer, NULL, szValue, cbValue)) {
@@ -199,7 +202,7 @@ static BOOL K22DataReadWinVer(HKEY hWinVer) {
 		} else {
 			K22ParseWinVer(szValue, &pK22Data->stDll.pWinVer->stDefault);
 		}
-		K22_D(
+		K22_V(
 			" - WinVer: setting %ld.%ld.%ld as default",
 			pK22Data->stDll.pWinVer->stDefault.dwMajor,
 			pK22Data->stDll.pWinVer->stDefault.dwMinor,
@@ -228,13 +231,13 @@ static BOOL K22DataReadWinVer(HKEY hWinVer) {
 					return FALSE;
 			}
 		} else {
-			/*K22_D(
+			K22_T(
 				" - WinVer: will replace %s",
 				pWinVerEntry->lpModuleName ? pWinVerEntry->lpModuleName : pWinVerEntry->lpModeName
-			);*/
+			);
 		}
 		K22ParseWinVer(szValue, pWinVerEntry);
-		K22_D(
+		K22_V(
 			" - WinVer: setting %ld.%ld.%ld for %s",
 			pWinVerEntry->dwMajor,
 			pWinVerEntry->dwMinor,
