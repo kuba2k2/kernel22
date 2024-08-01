@@ -91,6 +91,7 @@ BOOL K22PathIsFile(LPCSTR lpPath);
 BOOL K22PathIsFileEx(LPSTR lpDirectory, DWORD cchDirectory, LPCSTR lpName);
 // k22_dll_import.c
 BOOL K22ProcessImports(LPVOID lpImageBase);
+VOID K22DisableInitRoutine(LPVOID lpImageBase);
 BOOL K22CallInitRoutines(LPVOID lpContext);
 BOOL K22DummyEntryPoint(HANDLE hDll, DWORD dwReason, LPVOID lpContext);
 // k22_dll_resolve.c

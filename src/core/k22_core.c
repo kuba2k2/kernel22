@@ -2,7 +2,7 @@
 
 #include "kernel22.h"
 
-static VOID K22CoreDllNotification(DWORD dwReason, PLDR_DLL_NOTIFICATION_DATA pData, PVOID pContext);
+static BOOL K22CoreDllNotification(DWORD dwReason, PLDR_DLL_NOTIFICATION_DATA pData, PVOID pContext);
 
 BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext) {
 	K22_I("Kernel22 Core starting");
@@ -75,37 +75,26 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext) {
 	return TRUE;
 }
 
-static VOID K22CoreDllNotification(DWORD dwReason, PLDR_DLL_NOTIFICATION_DATA pData, PVOID pContext) {
+static BOOL K22CoreDllNotification(DWORD dwReason, PLDR_DLL_NOTIFICATION_DATA pData, PVOID pContext) {
+	LPVOID lpImageBase	 = pData->Loaded.DllBase;
+	LPCWSTR lpModuleName = pData->Loaded.BaseDllName->Buffer;
 	switch (dwReason) {
 		case LDR_DLL_NOTIFICATION_REASON_LOADED:
-			PLDR_DATA_TABLE_ENTRY pLdrEntry = K22GetLdrEntry(pData->Loaded.DllBase);
-			K22_D(
-				"DLL @ %p: %ls - loaded with entry @ %p",
-				pData->Loaded.DllBase,
-				pData->Loaded.BaseDllName->Buffer,
-				pLdrEntry->EntryPoint
-			);
-			if (!K22ClearBoundImportTable(pData->Loaded.DllBase)) {
-				K22_F(
-					"Couldn't clear bound import table of %ls (%p)",
-					pData->Loaded.BaseDllName->Buffer,
-					pData->Loaded.DllBase
-				);
-				return;
-			}
-			if (!K22ProcessImports(pData->Loaded.DllBase)) {
-				K22_F(
-					"Couldn't process import table of %ls (%p)",
-					pData->Loaded.BaseDllName->Buffer,
-					pData->Loaded.DllBase
-				);
-				return;
-			}
+			PLDR_DATA_TABLE_ENTRY pLdrEntry = K22GetLdrEntry(lpImageBase);
+			K22_D("DLL @ %p: %ls - loaded with entry @ %p", lpImageBase, lpModuleName, pLdrEntry->EntryPoint);
+			K22DisableInitRoutine(lpImageBase);
+			if (!K22ClearBoundImportTable(lpImageBase))
+				RETURN_K22_F("Couldn't clear bound import table of %ls (%p)", lpModuleName, lpImageBase);
+			if (!K22ProcessImports(lpImageBase))
+				RETURN_K22_F("Couldn't process import table of %ls (%p)", lpModuleName, lpImageBase);
 			break;
+
 		case LDR_DLL_NOTIFICATION_REASON_UNLOADED:
-			K22_D("DLL @ %p: %ls - unloaded", pData->Loaded.DllBase, pData->Loaded.BaseDllName->Buffer);
+			K22_D("DLL @ %p: %ls - unloaded", lpImageBase, lpModuleName);
 			break;
+
 		default:
 			break;
 	}
+	return TRUE;
 }
