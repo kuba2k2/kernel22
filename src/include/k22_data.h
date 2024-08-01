@@ -92,7 +92,7 @@ typedef struct K22_DLL_REDIRECT {
 typedef struct K22_DLL_REWRITE_SYMBOL {
 	LPSTR lpSourceSymbol; // source symbol to match
 	LPSTR lpTargetDll;	  // target DLL
-	LPSTR lpTargetSymbol; // optional, symbol to redirect to (same as source if unset)
+	LPSTR lpTargetSymbol; // symbol to redirect to
 	PVOID pProc;		  // pointer to target function
 	struct K22_DLL_REWRITE_SYMBOL *pPrev;
 	struct K22_DLL_REWRITE_SYMBOL *pNext;

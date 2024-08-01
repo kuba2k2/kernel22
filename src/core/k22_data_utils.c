@@ -32,3 +32,29 @@ BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR
 	}
 	return K22StringDupFileName(lpInput, cchInput, ppOutput);
 }
+
+BOOL K22PathMatches(LPCSTR lpPath, LPCSTR lpPattern) {
+	LPCSTR lpPathName	= strrchr(lpPath, '\\');
+	LPCSTR lpTargetName = strrchr(lpPattern, '\\');
+	if ((lpPathName && lpTargetName) || (!lpPathName && !lpTargetName))
+		// both are absolute or both aren't - they must be identical to match
+		return _stricmp(lpPath, lpPattern) == 0;
+	if (lpPathName)
+		// path is absolute - pattern name is enough to match
+		return _stricmp(lpPathName + 1, lpPattern) == 0;
+	// pattern is absolute, path isn't - impossible to determine match
+	return FALSE;
+}
+
+BOOL K22PathIsFile(LPCSTR lpPath) {
+	DWORD dwAttrib = GetFileAttributes(lpPath);
+	return dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
+}
+
+BOOL K22PathIsFileEx(LPSTR lpDirectory, DWORD cchDirectory, LPCSTR lpName) {
+	LPSTR lpSearchName = lpDirectory + cchDirectory;
+	*lpSearchName++	   = '\\';
+	*lpSearchName	   = '\0';
+	strcpy(lpSearchName, lpName);
+	return K22PathIsFile(lpDirectory);
+}

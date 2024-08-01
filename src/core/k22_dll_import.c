@@ -58,31 +58,26 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 
 		for (/**/; *pThunk != 0 && *pOrigThunk != 0; pThunk++, pOrigThunk++) {
 			PVOID pProcAddress;
+			LPCSTR lpSymbolName;
+
+			CHAR szSymbolName[1 + 5 + 1] = "#";
 			if (IMAGE_SNAP_BY_ORDINAL(*pOrigThunk)) {
-				pProcAddress = K22ResolveSymbol(lpImportModuleName, NULL, IMAGE_ORDINAL(*pOrigThunk));
-				K22_V(
-					"Module %s imports %s!#%lu -> %p",
-					pK22ModuleData->lpModuleName,
-					lpImportModuleName,
-					IMAGE_ORDINAL(*pOrigThunk),
-					pProcAddress
-				);
-				if (pProcAddress == 0) {
-					RETURN_K22_F_ERR("Couldn't resolve symbol %s!#%lu", lpImportModuleName, IMAGE_ORDINAL(*pOrigThunk));
-				}
+				_itoa(IMAGE_ORDINAL(*pOrigThunk), szSymbolName + 1, 10);
+				lpSymbolName = szSymbolName;
 			} else {
-				LPCSTR lpSymbolName = ((PIMAGE_IMPORT_BY_NAME)RVA(*pOrigThunk))->Name;
-				pProcAddress		= K22ResolveSymbol(lpImportModuleName, lpSymbolName, 0);
-				K22_V(
-					"Module %s imports %s!%s -> %p",
-					pK22ModuleData->lpModuleName,
-					lpImportModuleName,
-					lpSymbolName,
-					pProcAddress
-				);
-				if (pProcAddress == 0) {
-					RETURN_K22_F_ERR("Couldn't resolve symbol %s!%s", lpImportModuleName, lpSymbolName);
-				}
+				lpSymbolName = ((PIMAGE_IMPORT_BY_NAME)RVA(*pOrigThunk))->Name;
+			}
+
+			pProcAddress = K22Resolve(lpImportModuleName, lpSymbolName);
+			K22_V(
+				"Module %s imports %s!%s -> %p",
+				pK22ModuleData->lpModuleName,
+				lpImportModuleName,
+				lpSymbolName,
+				pProcAddress
+			);
+			if (pProcAddress == 0) {
+				RETURN_K22_F_ERR("Couldn't resolve symbol %s!%s", lpImportModuleName, lpSymbolName);
 			}
 
 			K22WithUnlocked(*pThunk) {
