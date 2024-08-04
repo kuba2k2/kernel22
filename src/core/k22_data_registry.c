@@ -29,6 +29,7 @@ BOOL K22DataReadRegistry() {
 		&pK22Data->stConfig.dwDllNotificationMode,
 		cbValue
 	);
+	K22_REG_READ_VALUE(pK22Data->stReg.hMain, "DebugImportResolver", &pK22Data->stConfig.bDebugImportResolver, cbValue);
 
 	if (pK22Data->stDll.pWinVer == NULL) {
 		K22_CALLOC(pK22Data->stDll.pWinVer);
@@ -48,24 +49,28 @@ BOOL K22DataReadRegistry() {
 			if (!K22DataReadDllExtra(hDllExtra))
 				return FALSE;
 		}
+		RegCloseKey(hDllExtra);
 
 		HKEY hDllRedirect;
 		if (K22_REG_OPEN_KEY(hConfig, "DllRedirect", hDllRedirect)) {
 			if (!K22DataReadDllRedirect(hDllRedirect))
 				return FALSE;
 		}
+		RegCloseKey(hDllRedirect);
 
 		HKEY hDllRewrite;
 		if (K22_REG_OPEN_KEY(hConfig, "DllRewrite", hDllRewrite)) {
 			if (!K22DataReadDllRewrite(hDllRewrite))
 				return FALSE;
 		}
+		RegCloseKey(hDllRewrite);
 
 		HKEY hWinVer;
 		if (K22_REG_OPEN_KEY(hConfig, "WinVer", hWinVer)) {
 			if (!K22DataReadWinVer(hWinVer))
 				return FALSE;
 		}
+		RegCloseKey(hWinVer);
 	}
 
 	return TRUE;

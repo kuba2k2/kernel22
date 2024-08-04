@@ -46,17 +46,9 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 				lpSymbolName = ((PIMAGE_IMPORT_BY_NAME)RVA(*pOrigThunk))->Name;
 			}
 
-			pProcAddress = K22Resolve(lpImportModuleName, lpSymbolName);
-			K22_V(
-				"Module %s imports %s!%s -> %p",
-				pK22ModuleData->lpModuleName,
-				lpImportModuleName,
-				lpSymbolName,
-				pProcAddress
-			);
-			if (pProcAddress == 0) {
-				RETURN_K22_F_ERR("Couldn't resolve symbol %s!%s", lpImportModuleName, lpSymbolName);
-			}
+			pProcAddress = K22Resolve(pK22ModuleData->lpModuleName, lpImportModuleName, lpSymbolName);
+			if (pProcAddress == NULL)
+				return FALSE;
 
 			K22WithUnlocked(*pThunk) {
 				*pThunk = (ULONG_PTR)pProcAddress;

@@ -41,6 +41,7 @@ typedef struct K22_DATA {
 		LPSTR lpInstallDir;
 		SIZE_T cchInstallDir;
 		DWORD dwDllNotificationMode;
+		BOOL bDebugImportResolver;
 	} stConfig;
 
 	struct {

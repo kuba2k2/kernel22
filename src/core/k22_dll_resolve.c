@@ -3,6 +3,7 @@
 #include "kernel22.h"
 
 static PVOID K22LoadAndResolve(
+	LPCSTR lpCallerName,
 	LPCSTR lpModuleName,
 	HINSTANCE *ppModule,
 	LPCSTR lpSymbolName,
@@ -123,7 +124,7 @@ LPCSTR K22ResolveModulePath(LPCSTR lpModuleName, HINSTANCE *ppModule) {
 	return NULL;
 }
 
-PVOID K22Resolve(LPCSTR lpModuleName, LPCSTR lpSymbolName) {
+PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName) {
 	LPCSTR lpModuleNameOrig = lpModuleName;
 	LPCSTR lpSymbolNameOrig = lpSymbolName;
 
@@ -142,7 +143,15 @@ PVOID K22Resolve(LPCSTR lpModuleName, LPCSTR lpSymbolName) {
 	PK22_DLL_REWRITE pDllRewrite = K22FindDllRewrite(lpModuleName);
 	if (pDllRewrite == NULL) {
 		// no DLL rewrite entry - nothing else to do
-		return K22LoadAndResolve(lpModuleName, ppModule, lpSymbolName, ppProc, lpModuleNameOrig, lpSymbolNameOrig);
+		return K22LoadAndResolve(
+			lpCallerName,
+			lpModuleName,
+			ppModule,
+			lpSymbolName,
+			ppProc,
+			lpModuleNameOrig,
+			lpSymbolNameOrig
+		);
 	}
 
 	PK22_DLL_REWRITE_SYMBOL pDllRewriteSymbol = K22FindDllRewriteSymbol(pDllRewrite, lpSymbolName);
@@ -157,13 +166,22 @@ PVOID K22Resolve(LPCSTR lpModuleName, LPCSTR lpSymbolName) {
 		ppModule	 = &hModule;				  // nowhere to cache the module handle in
 		ppProc		 = &pDllRewriteSymbol->pProc; // only cache the procedure address
 		// this must resolve
-		return K22LoadAndResolve(lpModuleName, ppModule, lpSymbolName, ppProc, lpModuleNameOrig, lpSymbolNameOrig);
+		return K22LoadAndResolve(
+			lpCallerName,
+			lpModuleName,
+			ppModule,
+			lpSymbolName,
+			ppProc,
+			lpModuleNameOrig,
+			lpSymbolNameOrig
+		);
 	}
 
 	// procedure not found so far - use Catch-All if set
 	if (pDllRewrite->lpCatchAllDll != NULL) {
 		// only return if valid procedure was found; also cache the module handle
 		if (K22LoadAndResolve(
+				lpCallerName,
 				pDllRewrite->lpCatchAllDll,
 				&pDllRewrite->hCatchAll,
 				lpSymbolName,
@@ -175,13 +193,22 @@ PVOID K22Resolve(LPCSTR lpModuleName, LPCSTR lpSymbolName) {
 	}
 
 	// try importing normally; will only cache in DLL redirect entry
-	if (K22LoadAndResolve(lpModuleName, ppModule, lpSymbolName, ppProc, lpModuleNameOrig, lpSymbolNameOrig))
+	if (K22LoadAndResolve(
+			lpCallerName,
+			lpModuleName,
+			ppModule,
+			lpSymbolName,
+			ppProc,
+			lpModuleNameOrig,
+			lpSymbolNameOrig
+		))
 		return *ppProc;
 
 	// procedure still not found - use Default if set
 	if (pDllRewrite->lpDefaultDll != NULL) {
 		// only return if valid procedure was found; also cache the module handle
 		if (K22LoadAndResolve(
+				lpCallerName,
 				pDllRewrite->lpDefaultDll,
 				&pDllRewrite->hDefault,
 				lpSymbolName,
@@ -197,6 +224,7 @@ PVOID K22Resolve(LPCSTR lpModuleName, LPCSTR lpSymbolName) {
 }
 
 static PVOID K22LoadAndResolve(
+	LPCSTR lpCallerName,
 	LPCSTR lpModuleName,
 	HINSTANCE *ppModule,
 	LPCSTR lpSymbolName,
@@ -212,13 +240,14 @@ static PVOID K22LoadAndResolve(
 		// resolve full module path, check if loaded already
 		lpModulePath = K22ResolveModulePath(lpModuleName, ppModule);
 		if (lpModulePath == NULL)
-			RETURN_K22_F("Module not found - %s (was: %s)", lpModuleName, lpModuleNameOrig);
+			RETURN_K22_F("Module not found - %s -> %s -> %s", lpCallerName, lpModuleNameOrig, lpModuleName);
 	}
 	if (*ppModule == NULL) {
 		// otherwise load it by full path
+		// TODO fail library loading if DLL notification fails
 		*ppModule = LoadLibrary(lpModulePath);
 		if (*ppModule == NULL)
-			RETURN_K22_F_ERR("Module load failed - %s (was: %s)", lpModuleName, lpModuleNameOrig);
+			RETURN_K22_F_ERR("Module load failed - %s -> %s -> %s", lpCallerName, lpModuleNameOrig, lpModuleName);
 	}
 
 	// module handle is already loaded
@@ -233,11 +262,23 @@ static PVOID K22LoadAndResolve(
 	// fail if not found
 	if (*ppProc == NULL)
 		RETURN_K22_F_ERR(
-			"Symbol not found - %s!%s (was: %s!%s)",
+			"Couldn't resolve - %s -> %s!%s -> %s!%s",
+			lpCallerName,
+			lpModuleNameOrig,
+			lpSymbolNameOrig,
+			lpModuleName,
+			lpSymbolName
+		);
+
+	if (pK22Data->stConfig.bDebugImportResolver)
+		K22_I(
+			"Resolved - %s -> %s!%s -> %s!%s -> %p",
+			lpCallerName,
+			lpModuleNameOrig,
+			lpSymbolNameOrig,
 			lpModuleName,
 			lpSymbolName,
-			lpModuleNameOrig,
-			lpSymbolNameOrig
+			*ppProc
 		);
 	return *ppProc;
 }

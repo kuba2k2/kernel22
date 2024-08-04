@@ -96,5 +96,5 @@ BOOL K22CallInitRoutines(LPVOID lpContext);
 BOOL K22DummyEntryPoint(HANDLE hDll, DWORD dwReason, LPVOID lpContext);
 // k22_dll_resolve.c
 LPCSTR K22ResolveModulePath(LPCSTR lpModuleName, HINSTANCE *ppModule);
-PVOID K22Resolve(LPCSTR lpModuleName, LPCSTR lpSymbolName);
+PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName);
 #endif
