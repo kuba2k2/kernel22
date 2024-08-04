@@ -3,6 +3,7 @@
 #include "kernel22.h"
 
 static BOOL K22DataReadDllExtra(HKEY hDllExtra);
+static BOOL K22DataReadDllApiSet(HKEY hDllApiSet);
 static BOOL K22DataReadDllRedirect(HKEY hDllRedirect);
 static BOOL K22DataReadDllRewrite(HKEY hDllRewrite);
 static BOOL K22DataReadWinVer(HKEY hWinVer);
@@ -51,6 +52,13 @@ BOOL K22DataReadRegistry() {
 		}
 		RegCloseKey(hDllExtra);
 
+		HKEY hDllApiSet;
+		if (K22_REG_OPEN_KEY(hConfig, "DllApiSet", hDllApiSet)) {
+			if (!K22DataReadDllApiSet(hDllApiSet))
+				return FALSE;
+		}
+		RegCloseKey(hDllApiSet);
+
 		HKEY hDllRedirect;
 		if (K22_REG_OPEN_KEY(hConfig, "DllRedirect", hDllRedirect)) {
 			if (!K22DataReadDllRedirect(hDllRedirect))
@@ -98,6 +106,33 @@ static BOOL K22DataReadDllExtra(HKEY hDllExtra) {
 			return FALSE;
 		K22_V(" - DLL Extra: setting '%s' (%s)", pDllExtra->lpKey, pDllExtra->lpTargetDll);
 	}
+	return TRUE;
+}
+
+static INT K22DllApiSetCompare(PVOID pDllApiSet1, PVOID pDllApiSet2) {
+	return _stricmp(((PK22_DLL_API_SET)pDllApiSet1)->lpSourceDll, ((PK22_DLL_API_SET)pDllApiSet2)->lpSourceDll);
+}
+
+static BOOL K22DataReadDllApiSet(HKEY hDllApiSet) {
+	K22_REG_VARS();
+
+	K22_REG_ENUM_VALUE(hDllApiSet, szName, cbName, szValue, cbValue) {
+		PK22_DLL_API_SET pDllApiSet;
+		K22_LL_ALLOC_APPEND(pK22Data->stDll.pDllApiSet, pDllApiSet);
+		if (!K22StringDupDllTarget(szName, cbName, &pDllApiSet->lpSourceDll, &pDllApiSet->lpSourceSymbol))
+			return FALSE;
+		if (!K22StringDup(szValue, cbValue - 1, &pDllApiSet->lpTargetDll))
+			return FALSE;
+
+		K22_V(
+			" - DLL ApiSet: setting %s!%s -> %s",
+			pDllApiSet->lpSourceDll,
+			pDllApiSet->lpSourceSymbol ? pDllApiSet->lpSourceSymbol : "*",
+			pDllApiSet->lpTargetDll
+		);
+	}
+	// sort the list; this is an optimization used together with "pDllApiSetDefault" in K22FindDllApiSet()
+	K22_LL_SORT(pK22Data->stDll.pDllApiSet, K22DllApiSetCompare);
 	return TRUE;
 }
 

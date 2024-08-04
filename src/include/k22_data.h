@@ -10,6 +10,7 @@
 typedef struct K22_DATA *PK22_DATA;
 typedef struct K22_MODULE_DATA *PK22_MODULE_DATA;
 typedef struct K22_DLL_EXTRA *PK22_DLL_EXTRA;
+typedef struct K22_DLL_API_SET *PK22_DLL_API_SET;
 typedef struct K22_DLL_REDIRECT *PK22_DLL_REDIRECT;
 typedef struct K22_DLL_REWRITE *PK22_DLL_REWRITE;
 typedef struct K22_WIN_VER *PK22_WIN_VER;
@@ -46,6 +47,7 @@ typedef struct K22_DATA {
 
 	struct {
 		PK22_DLL_EXTRA pDllExtra;
+		PK22_DLL_API_SET pDllApiSet;
 		PK22_DLL_REDIRECT pDllRedirect;
 		PK22_DLL_REWRITE pDllRewrite;
 		PK22_WIN_VER pWinVer;
@@ -77,6 +79,17 @@ typedef struct K22_DLL_EXTRA {
 	struct K22_DLL_EXTRA *pPrev;
 	struct K22_DLL_EXTRA *pNext;
 } K22_DLL_EXTRA;
+
+// DllApiSet
+
+typedef struct K22_DLL_API_SET {
+	LPSTR lpSourceDll;	  // source DLL
+	LPSTR lpSourceSymbol; // source symbol to match
+	LPSTR lpTargetDll;	  // target DLL
+	HINSTANCE hModule;	  // handle to lpTargetDll
+	struct K22_DLL_API_SET *pPrev;
+	struct K22_DLL_API_SET *pNext;
+} K22_DLL_API_SET;
 
 // DllRedirect
 

@@ -36,6 +36,31 @@ static PVOID K22LoadAndResolve(
  */
 //
 
+static PK22_DLL_API_SET K22FindDllApiSet(LPCSTR lpModuleName, LPCSTR lpSymbolName) {
+	// only try to resolve "*-ms-*" DLLs
+	if (strlen(lpModuleName) <= sizeof("api-ms-") || _strnicmp(lpModuleName + 3, "-ms-", 4) != 0)
+		return NULL;
+	PK22_DLL_API_SET pDllApiSet		   = NULL;
+	PK22_DLL_API_SET pDllApiSetDefault = NULL;
+	K22_LL_FOREACH(pK22Data->stDll.pDllApiSet, pDllApiSet) {
+		if (!K22PathMatches(lpModuleName, pDllApiSet->lpSourceDll)) {
+			// check if match without source symbol already found
+			// return it already, since no more matches will be found
+			// (assuming that registry entries are sorted alphabetically)
+			if (pDllApiSetDefault != NULL)
+				return pDllApiSetDefault;
+			continue;
+		}
+		// store the last match without source symbol
+		if (pDllApiSet->lpSourceSymbol == NULL)
+			pDllApiSetDefault = pDllApiSet;
+		// quickly return any entry matching the source symbol
+		else if (_stricmp(pDllApiSet->lpSourceSymbol, lpSymbolName) == 0)
+			return pDllApiSet;
+	}
+	return pDllApiSetDefault;
+}
+
 static PK22_DLL_REDIRECT K22FindDllRedirect(LPCSTR lpModuleName) {
 	// recursively resolve configured DLL redirects
 	// does NOT handle redirection loops!
@@ -133,9 +158,16 @@ PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName) 
 	HINSTANCE *ppModule = &hModule;
 	PVOID *ppProc		= &pProc;
 
+	PK22_DLL_API_SET pDllApiSet = K22FindDllApiSet(lpModuleName, lpSymbolName);
+	if (pDllApiSet != NULL) {
+		// apply DLL ApiSet redirect entry first
+		lpModuleName = pDllApiSet->lpTargetDll;
+		ppModule	 = &pDllApiSet->hModule; // cache module handle in redirect entry
+	}
+
 	PK22_DLL_REDIRECT pDllRedirect = K22FindDllRedirect(lpModuleName);
 	if (pDllRedirect != NULL) {
-		// apply DLL redirect entry first
+		// then apply other DLL redirect entries
 		lpModuleName = pDllRedirect->lpTargetDll;
 		ppModule	 = &pDllRedirect->hModule; // cache module handle in redirect entry
 	}
