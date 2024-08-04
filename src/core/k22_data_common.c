@@ -57,6 +57,30 @@ static BOOL K22DataInitialize(LPVOID lpImageBase) {
 		K22_D("Per-app configuration key found");
 	}
 
+	TCHAR szInstallDir[MAX_PATH + 1];
+	DWORD cbInstallDir = sizeof(szInstallDir);
+	if (!(cbInstallDir = K22ConfigReadValueGlobal("InstallDir", szInstallDir, cbInstallDir)))
+		RETURN_K22_F_ERR("Couldn't read InstallDir from registry");
+	cbInstallDir--; // skip the NULL terminator
+	if (szInstallDir[cbInstallDir - 1] != '\\')
+		szInstallDir[cbInstallDir++] = '\\';
+	strcpy(szInstallDir + cbInstallDir, pK22Data->fIs64Bit ? "DLL_64\\" : "DLL_32\\");
+	cbInstallDir += 7;
+	pK22Data->stConfig.lpInstallDir	 = _strdup(szInstallDir);
+	pK22Data->stConfig.cchInstallDir = cbInstallDir;
+
+	K22ConfigReadValueGlobal("DllNotificationMode", &pK22Data->stConfig.dwDllNotificationMode, sizeof(DWORD));
+	K22ConfigReadValueGlobal("DebugImportResolver", &pK22Data->stConfig.bDebugImportResolver, sizeof(BOOL));
+
+	if (!K22ConfigReadKey("DllExtra", K22ConfigParseDllExtra))
+		return FALSE;
+	if (!K22ConfigReadKey("DllApiSet", K22ConfigParseDllApiSet))
+		return FALSE;
+	if (!K22ConfigReadKey("DllRedirect", K22ConfigParseDllRedirect))
+		return FALSE;
+	if (!K22ConfigReadKey("DllRewrite", K22ConfigParseDllRewrite))
+		return FALSE;
+
 	return TRUE;
 }
 

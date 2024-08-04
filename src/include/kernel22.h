@@ -63,6 +63,10 @@ K22_CORE_PROC BOOL K22ClearBoundImportTable(LPVOID lpImageBase);
 // k22_data_common.c
 K22_CORE_PROC PK22_DATA K22DataGet();
 K22_CORE_PROC PK22_MODULE_DATA K22DataGetModule(LPVOID lpImageBase);
+// k22_data_registry.c
+K22_CORE_PROC DWORD K22ConfigReadValueGlobal(LPCSTR lpName, PVOID pValue, DWORD cbValue);
+K22_CORE_PROC DWORD K22ConfigReadValue(LPCSTR lpName, PVOID pValue, DWORD cbValue);
+K22_CORE_PROC BOOL K22ConfigReadKey(LPCSTR lpName, BOOL (*pProc)(HKEY));
 // k22_hexdump.c
 K22_CORE_PROC VOID K22HexDump(CONST BYTE *pBuf, SIZE_T cbLength, ULONGLONG ullOffset);
 K22_CORE_PROC VOID K22HexDumpProcess(HANDLE hProcess, LPCVOID lpAddress, SIZE_T cbLength);
@@ -80,8 +84,11 @@ K22_CORE_PROC PLDR_DATA_TABLE_ENTRY K22GetLdrEntry(LPVOID lpImageBase);
 #if K22_CORE
 // k22_core.c
 BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext);
-// k22_data_registry.c
-BOOL K22DataReadRegistry();
+// k22_data_config.c
+BOOL K22ConfigParseDllExtra(HKEY hDllExtra);
+BOOL K22ConfigParseDllApiSet(HKEY hDllApiSet);
+BOOL K22ConfigParseDllRedirect(HKEY hDllRedirect);
+BOOL K22ConfigParseDllRewrite(HKEY hDllRewrite);
 // k22_data_utils.c
 BOOL K22StringDup(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
 BOOL K22StringDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);

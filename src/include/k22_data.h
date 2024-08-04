@@ -13,7 +13,6 @@ typedef struct K22_DLL_EXTRA *PK22_DLL_EXTRA;
 typedef struct K22_DLL_API_SET *PK22_DLL_API_SET;
 typedef struct K22_DLL_REDIRECT *PK22_DLL_REDIRECT;
 typedef struct K22_DLL_REWRITE *PK22_DLL_REWRITE;
-typedef struct K22_WIN_VER *PK22_WIN_VER;
 
 #if K22_CORE
 extern PK22_DATA pK22Data;
@@ -50,7 +49,6 @@ typedef struct K22_DATA {
 		PK22_DLL_API_SET pDllApiSet;
 		PK22_DLL_REDIRECT pDllRedirect;
 		PK22_DLL_REWRITE pDllRewrite;
-		PK22_WIN_VER pWinVer;
 	} stDll;
 } K22_DATA;
 
@@ -122,27 +120,3 @@ typedef struct K22_DLL_REWRITE {
 	struct K22_DLL_REWRITE *pPrev;
 	struct K22_DLL_REWRITE *pNext;
 } K22_DLL_REWRITE;
-
-// DllHook
-// TBD
-
-// WinVer
-
-typedef struct K22_WIN_VER_ENTRY {
-	LPSTR lpModuleName; // module name to match
-	LPSTR lpModeName;	// spoofing mode to match
-	DWORD dwMajor;		// major version number
-	DWORD dwMinor;		// minor version number
-	DWORD dwBuild;		// build number
-	struct K22_WIN_VER_ENTRY *pPrev;
-	struct K22_WIN_VER_ENTRY *pNext;
-} K22_WIN_VER_ENTRY, *PK22_WIN_VER_ENTRY;
-
-typedef struct K22_WIN_VER {
-	DWORD fMode;				 // enabled spoofing modes
-	K22_WIN_VER_ENTRY stDefault; // default version to apply
-	PK22_WIN_VER_ENTRY pEntries; // per-module/per-mode version spoofing
-} K22_WIN_VER;
-
-// BinPatch
-// TBD

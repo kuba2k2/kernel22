@@ -16,11 +16,6 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext) {
 	K22_I("Process Name: %s", pK22Data->lpProcessName);
 	K22_I("Context: %p", lpContext);
 
-	// read configuration from registry
-	K22_I("Reading configuration");
-	if (!K22DataReadRegistry())
-		return FALSE;
-
 	// initialize MinHook
 	if (MH_Initialize() != MH_OK)
 		RETURN_K22_F("Couldn't initialize MinHook");
