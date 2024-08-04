@@ -33,6 +33,7 @@
 
 #include "k22_data.h"
 #include "k22_extern.h"
+#include "k22_hook.h"
 #include "k22_logger.h"
 #include "k22_macros.h"
 #include "k22_types.h"
@@ -78,6 +79,8 @@ K22_CORE_PROC BOOL K22ProcessWritePeb(HANDLE hProcess, PPEB pPeb);
 K22_CORE_PROC VOID K22DebugPrintModules();
 K22_CORE_PROC BOOL K22DebugDumpModules(LPCSTR lpOutputDir, LPVOID lpImageBase);
 K22_CORE_PROC PLDR_DATA_TABLE_ENTRY K22GetLdrEntry(LPVOID lpImageBase);
+K22_CORE_PROC BOOL K22HookCreate(LPVOID pProc, LPVOID pHook, LPVOID *ppReal);
+K22_CORE_PROC BOOL K22HookRemove(LPVOID pProc);
 
 /* Private core functions */
 

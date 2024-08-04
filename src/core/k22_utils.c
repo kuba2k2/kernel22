@@ -89,3 +89,19 @@ PLDR_DATA_TABLE_ENTRY K22GetLdrEntry(LPVOID lpImageBase) {
 	}
 	return NULL;
 }
+
+BOOL K22HookCreate(LPVOID pProc, LPVOID pHook, LPVOID *ppReal) {
+	MH_STATUS eStatus;
+	if ((eStatus = MH_CreateHook(pProc, pHook, ppReal)) != MH_OK)
+		RETURN_K22_F("Couldn't create hook - %s", MH_StatusToString(eStatus));
+	if ((eStatus = MH_EnableHook(pProc)) != MH_OK)
+		RETURN_K22_F("Couldn't enable hook - %s", MH_StatusToString(eStatus));
+	return TRUE;
+}
+
+BOOL K22HookRemove(LPVOID pProc) {
+	MH_STATUS eStatus;
+	if ((eStatus = MH_RemoveHook(pProc)) != MH_OK)
+		RETURN_K22_F("Couldn't remove hook - %s", MH_StatusToString(eStatus));
+	return TRUE;
+}
