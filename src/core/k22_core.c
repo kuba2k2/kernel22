@@ -52,8 +52,11 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext) {
 			RETURN_K22_F_ERR("Couldn't register DLL notification");
 	}
 
-	// don't call any initialization routines during resolving of static dependencies
+	// don't call any initialization routines in ntdll
 	pK22Data->fDelayDllInit = TRUE;
+	// load any configured extra DLLs
+	if (!K22DllExtraLoadAll())
+		return FALSE;
 	// process static dependencies of the current process
 	if (!K22ProcessImports(pK22Data->lpProcessBase))
 		return FALSE;

@@ -89,6 +89,8 @@ BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR
 BOOL K22PathMatches(LPCSTR lpPath, LPCSTR lpPattern);
 BOOL K22PathIsFile(LPCSTR lpPath);
 BOOL K22PathIsFileEx(LPSTR lpDirectory, DWORD cchDirectory, LPCSTR lpName);
+// k22_dll_extra.c
+BOOL K22DllExtraLoadAll();
 // k22_dll_import.c
 BOOL K22ProcessImports(LPVOID lpImageBase);
 VOID K22DisableInitRoutine(LPVOID lpImageBase);
