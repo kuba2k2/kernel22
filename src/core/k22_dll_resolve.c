@@ -279,7 +279,7 @@ PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName) 
 
 	// nothing works
 Error:
-	K22_F(
+	K22_F_ERR(
 		"%s - %s -> %s!%s -> %s!%s",
 		lpErrorName,
 		lpCallerName,

@@ -71,9 +71,9 @@ static DWORD K22VPrintf(LPCSTR lpFormat, va_list Args) {
 		nt_vsnprintf   = (void *)GetProcAddress(hNtdll, "_vsnprintf");
 	}
 
-	DWORD cbMessage =
-		nt_vsnprintf(pMessageHead, sizeof(pMessageBuffer) - (pMessageHead - pMessageBuffer), lpFormat, Args);
-	pMessageHead += cbMessage;
+	DWORD cbLeft	= sizeof(pMessageBuffer) - (pMessageHead - pMessageBuffer) - 2;
+	DWORD cbMessage = nt_vsnprintf(pMessageHead, cbLeft, lpFormat, Args);
+	pMessageHead += MIN(cbMessage, cbLeft);
 	return cbMessage;
 }
 
@@ -171,10 +171,8 @@ VOID K22LogWrite(
 	va_start(va_args, lpFormat);
 	K22VPrintf(lpFormat, va_args);
 	va_end(va_args);
-
 	if (dwLevel == K22_LEVEL_FATAL)
 		K22AppendError(lpMessageOnly);
-
 	K22OutputMessage();
 
 	if (dwWin32Error == ERROR_SUCCESS)
@@ -213,7 +211,10 @@ VOID K22LogWrite(
 		}
 	}
 
+	lpMessageOnly = pMessageHead;
 	K22Printf("%*c====> CODE: %s (0x%08lx)", cbMessagePrefix, ' ', lpMessage, dwWin32Error);
+	if (dwLevel == K22_LEVEL_FATAL)
+		K22AppendError(lpMessageOnly);
 	K22OutputMessage();
 
 	if (dwWin32Error != STATUS_BREAKPOINT) {
