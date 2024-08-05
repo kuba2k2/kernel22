@@ -18,6 +18,12 @@
 			return FALSE;                                                                                              \
 	} while (0)
 
+#define K22_HOOK_CREATE_EX(name, proc)                                                                                 \
+	do {                                                                                                               \
+		if (!K22HookCreate(proc, CONCAT(Hook, name), (LPVOID)&CONCAT(Real, name)))                                     \
+			return FALSE;                                                                                              \
+	} while (0)
+
 #define K22_HOOK_REMOVE(name)                                                                                          \
 	do {                                                                                                               \
 		if (!K22HookRemove(name))                                                                                      \

@@ -57,3 +57,8 @@ NTSTATUS(NTAPI *LdrUnregisterDllNotification)
 (PVOID Cookie);
 
 typedef BOOL (*PDLL_INIT_ROUTINE)(HANDLE hDll, DWORD dwReason, LPVOID lpContext);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlGetNtVersionNumbers(PDWORD pMajorVersion, PDWORD pMinorVersion, PDWORD pBuildNumber);

@@ -11,3 +11,4 @@ macro(add_dll NAME)
 endmacro()
 
 add_dll(Kernel32)
+add_dll(WinVer)
