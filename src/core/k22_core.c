@@ -84,13 +84,14 @@ static BOOL K22CoreDllNotification(DWORD dwReason, PLDR_DLL_NOTIFICATION_DATA pD
 	LPCWSTR lpModuleName = pData->Loaded.BaseDllName->Buffer;
 	switch (dwReason) {
 		case LDR_DLL_NOTIFICATION_REASON_LOADED:
-			PLDR_DATA_TABLE_ENTRY pLdrEntry = K22GetLdrEntry(lpImageBase);
+			PK22_MODULE_DATA pK22ModuleData = K22DataGetModule(lpImageBase);
+			PLDR_DATA_TABLE_ENTRY pLdrEntry = pK22ModuleData->pLdrEntry;
 			K22_D("DLL @ %p: %ls - loaded with entry @ %p", lpImageBase, lpModuleName, pLdrEntry->EntryPoint);
 			K22DisableInitRoutine(lpImageBase);
-			if (!K22ClearBoundImportTable(lpImageBase))
+			if (!K22ClearBoundImportTable(lpImageBase) || !K22ProcessImports(lpImageBase)) {
+				pK22ModuleData->fDllNotificationFailed = TRUE;
 				return FALSE;
-			if (!K22ProcessImports(lpImageBase))
-				return FALSE;
+			}
 			break;
 
 		case LDR_DLL_NOTIFICATION_REASON_UNLOADED:

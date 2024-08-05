@@ -64,6 +64,7 @@ typedef struct K22_MODULE_DATA {
 	LPSTR lpModulePath;
 	LPSTR lpModuleName;
 	BOOL fIsProcess;
+	BOOL fDllNotificationFailed;
 
 	PDLL_INIT_ROUTINE lpDelayedInitRoutine;
 } K22_MODULE_DATA;

@@ -315,10 +315,14 @@ static PVOID K22LoadAndResolve(
 	}
 	if (*ppModule == NULL) {
 		// otherwise load it by full path
-		// TODO fail library loading if DLL notification fails
 		*ppModule = LoadLibrary(lpModulePath);
 		if (*ppModule == NULL) {
 			*ppErrorName = "Module load failed";
+			return NULL;
+		}
+		PK22_MODULE_DATA pK22ModuleData = K22DataGetModule(*ppModule);
+		if (pK22ModuleData->fDllNotificationFailed) {
+			*ppErrorName = "Module load failed in DLL notification";
 			return NULL;
 		}
 	}
