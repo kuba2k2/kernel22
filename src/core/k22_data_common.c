@@ -69,6 +69,7 @@ static BOOL K22DataInitialize(LPVOID lpImageBase) {
 	pK22Data->stConfig.lpInstallDir	 = _strdup(szInstallDir);
 	pK22Data->stConfig.cchInstallDir = cbInstallDir;
 
+	K22ConfigReadValueGlobal("LogLevel", &pK22Data->stConfig.dwLogLevel, sizeof(DWORD));
 	K22ConfigReadValueGlobal("DllNotificationMode", &pK22Data->stConfig.dwDllNotificationMode, sizeof(DWORD));
 	K22ConfigReadValueGlobal("DebugImportResolver", &pK22Data->stConfig.bDebugImportResolver, sizeof(BOOL));
 

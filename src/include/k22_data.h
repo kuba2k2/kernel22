@@ -38,6 +38,7 @@ typedef struct K22_DATA {
 	} stReg;
 
 	struct {
+		DWORD dwLogLevel;
 		LPSTR lpInstallDir;
 		SIZE_T cchInstallDir;
 		DWORD dwDllNotificationMode;

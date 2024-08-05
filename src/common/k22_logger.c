@@ -94,6 +94,9 @@ VOID K22LogWrite(
 	LPCSTR lpFormat,
 	...
 ) {
+	if (pK22Data && dwLevel < pK22Data->stConfig.dwLogLevel)
+		return;
+
 #if K22_LOGGER_COLOR
 	TCHAR cBright = (TCHAR)('0' + (adwColors[dwLevel] >> 4));
 	TCHAR cValue  = (TCHAR)('0' + (adwColors[dwLevel] & 0x7));
