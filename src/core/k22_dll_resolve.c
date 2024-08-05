@@ -47,7 +47,7 @@ static PK22_DLL_API_SET K22FindDllApiSet(LPCSTR lpModuleName, LPCSTR lpSymbolNam
 	PK22_DLL_API_SET pDllApiSetSameLevel = NULL;
 	K22_LL_FOREACH(pK22Data->stDll.pDllApiSet, pDllApiSet) {
 		// compare module name (api-ms-aaa-bbb-lX-Y-Z.dll) without X, Y, Z
-		if (_strnicmp(lpModuleName, pDllApiSet->lpSourceDll, cchModuleName - 11) == 0) {
+		if (_strnicmp(lpModuleName, pDllApiSet->lpSourceDll, cchModuleName - 9) == 0) {
 			// module name matches
 			if (pDllApiSet->lpSourceSymbol) {
 				// quickly return any entry matching the source symbol

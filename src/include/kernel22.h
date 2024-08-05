@@ -17,6 +17,7 @@
 #include "utlist.h"
 
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2 * !!(condition)]))
+#define K22_DLL_EXPORT			__declspec(dllexport)
 
 #if K22_CORE
 // core exports public functions
