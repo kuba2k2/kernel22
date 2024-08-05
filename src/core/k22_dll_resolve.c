@@ -38,27 +38,42 @@ static PVOID K22LoadAndResolve(
 
 static PK22_DLL_API_SET K22FindDllApiSet(LPCSTR lpModuleName, LPCSTR lpSymbolName) {
 	// only try to resolve "*-ms-*" DLLs
-	if (strlen(lpModuleName) <= sizeof("api-ms-") || _strnicmp(lpModuleName + 3, "-ms-", 4) != 0)
+	DWORD cchModuleName = strlen(lpModuleName);
+	if (cchModuleName <= sizeof("api-ms-") || _strnicmp(lpModuleName + 3, "-ms-", 4) != 0)
 		return NULL;
-	PK22_DLL_API_SET pDllApiSet		   = NULL;
-	PK22_DLL_API_SET pDllApiSetDefault = NULL;
+
+	PK22_DLL_API_SET pDllApiSet			 = NULL;
+	PK22_DLL_API_SET pDllApiSetSameName	 = NULL;
+	PK22_DLL_API_SET pDllApiSetSameLevel = NULL;
 	K22_LL_FOREACH(pK22Data->stDll.pDllApiSet, pDllApiSet) {
-		if (!K22PathMatches(lpModuleName, pDllApiSet->lpSourceDll)) {
-			// check if match without source symbol already found
-			// return it already, since no more matches will be found
-			// (assuming that registry entries are sorted alphabetically)
-			if (pDllApiSetDefault != NULL)
-				return pDllApiSetDefault;
+		// compare module name (api-ms-aaa-bbb-lX-Y-Z.dll) without X, Y, Z
+		if (_strnicmp(lpModuleName, pDllApiSet->lpSourceDll, cchModuleName - 11) == 0) {
+			// module name matches
+			if (pDllApiSet->lpSourceSymbol) {
+				// quickly return any entry matching the source symbol
+				if (_stricmp(pDllApiSet->lpSourceSymbol, lpSymbolName) == 0)
+					return pDllApiSet;
+				// otherwise skip this entry, because it's symbol-specific
+				continue;
+			}
+			pDllApiSetSameName = pDllApiSet;
+			// try comparing with X to find level matches
+			if (_strnicmp(lpModuleName, pDllApiSet->lpSourceDll, cchModuleName - 8) == 0) {
+				pDllApiSetSameLevel = pDllApiSet;
+			}
 			continue;
 		}
-		// store the last match without source symbol
-		if (pDllApiSet->lpSourceSymbol == NULL)
-			pDllApiSetDefault = pDllApiSet;
-		// quickly return any entry matching the source symbol
-		else if (_stricmp(pDllApiSet->lpSourceSymbol, lpSymbolName) == 0)
-			return pDllApiSet;
+		// pDllApiSet doesn't match the API set name
+		// - check if match without source symbol already found
+		// - return it already, since no more matches will be found
+		//   (assuming that registry entries are sorted alphabetically)
+		// - prioritize matched level than just the name
+		if (pDllApiSetSameLevel != NULL)
+			return pDllApiSetSameLevel;
+		if (pDllApiSetSameName != NULL)
+			return pDllApiSetSameName;
 	}
-	return pDllApiSetDefault;
+	return pDllApiSetSameLevel ? pDllApiSetSameLevel : pDllApiSetSameName;
 }
 
 static PK22_DLL_REDIRECT K22FindDllRedirect(LPCSTR lpModuleName) {
