@@ -82,9 +82,9 @@ static BOOL K22CoreDllNotification(DWORD dwReason, PLDR_DLL_NOTIFICATION_DATA pD
 			K22_D("DLL @ %p: %ls - loaded with entry @ %p", lpImageBase, lpModuleName, pLdrEntry->EntryPoint);
 			K22DisableInitRoutine(lpImageBase);
 			if (!K22ClearBoundImportTable(lpImageBase))
-				RETURN_K22_F("Couldn't clear bound import table of %ls (%p)", lpModuleName, lpImageBase);
+				return FALSE;
 			if (!K22ProcessImports(lpImageBase))
-				RETURN_K22_F("Couldn't process import table of %ls (%p)", lpModuleName, lpImageBase);
+				return FALSE;
 			break;
 
 		case LDR_DLL_NOTIFICATION_REASON_UNLOADED:

@@ -9,7 +9,8 @@ static PVOID K22LoadAndResolve(
 	LPCSTR lpSymbolName,
 	PVOID *ppProc,
 	LPCSTR lpModuleNameOrig,
-	LPCSTR lpSymbolNameOrig
+	LPCSTR lpSymbolNameOrig,
+	LPCSTR *ppErrorName
 );
 
 /*
@@ -167,6 +168,7 @@ LPCSTR K22ResolveModulePath(LPCSTR lpModuleName, HINSTANCE *ppModule) {
 PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName) {
 	LPCSTR lpModuleNameOrig = lpModuleName;
 	LPCSTR lpSymbolNameOrig = lpSymbolName;
+	LPCSTR lpErrorName		= NULL;
 
 	HINSTANCE hModule	= NULL;
 	PVOID pProc			= NULL;
@@ -190,15 +192,18 @@ PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName) 
 	PK22_DLL_REWRITE pDllRewrite = K22FindDllRewrite(lpModuleName);
 	if (pDllRewrite == NULL) {
 		// no DLL rewrite entry - nothing else to do
-		return K22LoadAndResolve(
-			lpCallerName,
-			lpModuleName,
-			ppModule,
-			lpSymbolName,
-			ppProc,
-			lpModuleNameOrig,
-			lpSymbolNameOrig
-		);
+		if (K22LoadAndResolve(
+				lpCallerName,
+				lpModuleName,
+				ppModule,
+				lpSymbolName,
+				ppProc,
+				lpModuleNameOrig,
+				lpSymbolNameOrig,
+				&lpErrorName
+			))
+			return *ppProc;
+		goto Error;
 	}
 
 	PK22_DLL_REWRITE_SYMBOL pDllRewriteSymbol = K22FindDllRewriteSymbol(pDllRewrite, lpSymbolName);
@@ -213,15 +218,18 @@ PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName) 
 		ppModule	 = &hModule;				  // nowhere to cache the module handle in
 		ppProc		 = &pDllRewriteSymbol->pProc; // only cache the procedure address
 		// this must resolve
-		return K22LoadAndResolve(
-			lpCallerName,
-			lpModuleName,
-			ppModule,
-			lpSymbolName,
-			ppProc,
-			lpModuleNameOrig,
-			lpSymbolNameOrig
-		);
+		if (K22LoadAndResolve(
+				lpCallerName,
+				lpModuleName,
+				ppModule,
+				lpSymbolName,
+				ppProc,
+				lpModuleNameOrig,
+				lpSymbolNameOrig,
+				&lpErrorName
+			))
+			return *ppProc;
+		goto Error;
 	}
 
 	// procedure not found so far - use Catch-All if set
@@ -234,7 +242,8 @@ PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName) 
 				lpSymbolName,
 				ppProc,
 				lpModuleNameOrig,
-				lpSymbolNameOrig
+				lpSymbolNameOrig,
+				&lpErrorName
 			))
 			return *ppProc;
 	}
@@ -247,7 +256,8 @@ PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName) 
 			lpSymbolName,
 			ppProc,
 			lpModuleNameOrig,
-			lpSymbolNameOrig
+			lpSymbolNameOrig,
+			&lpErrorName
 		))
 		return *ppProc;
 
@@ -261,12 +271,23 @@ PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName) 
 				lpSymbolName,
 				ppProc,
 				lpModuleNameOrig,
-				lpSymbolNameOrig
+				lpSymbolNameOrig,
+				&lpErrorName
 			))
 			return *ppProc;
 	}
 
 	// nothing works
+Error:
+	K22_F(
+		"%s - %s -> %s!%s -> %s!%s",
+		lpErrorName,
+		lpCallerName,
+		lpModuleNameOrig,
+		lpSymbolNameOrig,
+		lpModuleName,
+		lpSymbolName
+	);
 	return NULL;
 }
 
@@ -277,7 +298,8 @@ static PVOID K22LoadAndResolve(
 	LPCSTR lpSymbolName,
 	PVOID *ppProc,
 	LPCSTR lpModuleNameOrig,
-	LPCSTR lpSymbolNameOrig
+	LPCSTR lpSymbolNameOrig,
+	LPCSTR *ppErrorName
 ) {
 	if (*ppProc != NULL)
 		return *ppProc;
@@ -286,15 +308,19 @@ static PVOID K22LoadAndResolve(
 	if (*ppModule == NULL) {
 		// resolve full module path, check if loaded already
 		lpModulePath = K22ResolveModulePath(lpModuleName, ppModule);
-		if (lpModulePath == NULL)
-			RETURN_K22_F("Module not found - %s -> %s -> %s", lpCallerName, lpModuleNameOrig, lpModuleName);
+		if (lpModulePath == NULL) {
+			*ppErrorName = "Module not found";
+			return NULL;
+		}
 	}
 	if (*ppModule == NULL) {
 		// otherwise load it by full path
 		// TODO fail library loading if DLL notification fails
 		*ppModule = LoadLibrary(lpModulePath);
-		if (*ppModule == NULL)
-			RETURN_K22_F_ERR("Module load failed - %s -> %s -> %s", lpCallerName, lpModuleNameOrig, lpModuleName);
+		if (*ppModule == NULL) {
+			*ppErrorName = "Module load failed";
+			return NULL;
+		}
 	}
 
 	// module handle is already loaded
@@ -306,16 +332,11 @@ static PVOID K22LoadAndResolve(
 		*ppProc = GetProcAddress(*ppModule, lpSymbolName);
 	}
 
-	// fail if not found
-	if (*ppProc == NULL)
-		RETURN_K22_F_ERR(
-			"Couldn't resolve - %s -> %s!%s -> %s!%s",
-			lpCallerName,
-			lpModuleNameOrig,
-			lpSymbolNameOrig,
-			lpModuleName,
-			lpSymbolName
-		);
+	PVOID pProc = *ppProc;
+	if (pProc == NULL) {
+		*ppErrorName = "Symbol not found";
+		return NULL;
+	}
 
 	if (pK22Data->stConfig.bDebugImportResolver)
 		K22_I(
@@ -325,7 +346,9 @@ static PVOID K22LoadAndResolve(
 			lpSymbolNameOrig,
 			lpModuleName,
 			lpSymbolName,
-			*ppProc
+			pProc
 		);
-	return *ppProc;
+
+	*ppErrorName = NULL;
+	return pProc;
 }
