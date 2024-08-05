@@ -116,6 +116,24 @@ BOOL K22ConfigParseDllRedirect(HKEY hDllRedirect) {
 BOOL K22ConfigParseDllRewrite(HKEY hDllRewrite) {
 	K22_REG_VARS();
 
+	K22_REG_ENUM_VALUE(hDllRewrite, szName, cbName, szValue, cbValue) {
+		PK22_DLL_REWRITE pDllRewrite;
+		K22_LL_FIND(
+			pK22Data->stDll.pDllRewrite,
+			pDllRewrite,
+			// comparison
+			strcmp(szName, pDllRewrite->lpSourceDll) == 0
+		);
+		if (pDllRewrite == NULL) {
+			K22_LL_ALLOC_APPEND(pK22Data->stDll.pDllRewrite, pDllRewrite);
+			if (!K22StringDup(szName, cbName, &pDllRewrite->lpSourceDll))
+				return FALSE;
+		}
+		if (!K22StringDupFileName(szValue, cbValue - 1, &pDllRewrite->lpDefaultDll))
+			return FALSE;
+		K22_D(" - DLL Rewrite: setting %s!? (missing) -> %s", pDllRewrite->lpSourceDll, pDllRewrite->lpDefaultDll);
+	}
+
 	K22_REG_ENUM_KEY(hDllRewrite, szName, cbName) {
 		PK22_DLL_REWRITE pDllRewrite;
 		K22_LL_FIND(
@@ -134,7 +152,7 @@ BOOL K22ConfigParseDllRewrite(HKEY hDllRewrite) {
 		if (K22_REG_READ_VALUE(hDllRewriteItem, NULL, szValue, cbValue)) {
 			if (!K22StringDupFileName(szValue, cbValue - 1, &pDllRewrite->lpDefaultDll))
 				return FALSE;
-			K22_D(" - DLL Rewrite: setting %s!* (missing) -> %s", pDllRewrite->lpSourceDll, pDllRewrite->lpDefaultDll);
+			K22_D(" - DLL Rewrite: setting %s!? (missing) -> %s", pDllRewrite->lpSourceDll, pDllRewrite->lpDefaultDll);
 		}
 		if (K22_REG_READ_VALUE(hDllRewriteItem, "*", szValue, cbValue)) {
 			if (!K22StringDupFileName(szValue, cbValue - 1, &pDllRewrite->lpCatchAllDll))
