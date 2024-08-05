@@ -117,7 +117,7 @@
 #define K22_LL_SORT(pHead, cmp)			  DL_SORT2(pHead, cmp, pPrev, pNext)
 #define K22_LL_DELETE(pHead, pElem)		  DL_DELETE2(pHead, pElem, pPrev, pNext)
 #define K22_LL_FOREACH(pHead, pElem)	  DL_FOREACH2(pHead, pElem, pNext)
-#define K22_LL_FOREACH_SAFE(pHead, pElem) DL_FOREACH_SAFE2(pHead, pElem, pPrev, pNext)
+#define K22_LL_FOREACH_SAFE(pHead, pElem) DL_FOREACH_SAFE2(pHead, pElem, pTmp, pNext)
 
 #define K22_LL_ALLOC_APPEND(pHead, pElem)                                                                              \
 	do {                                                                                                               \

@@ -36,6 +36,7 @@ static TCHAR adwColors[] = {
 
 static CHAR pMessageBuffer[1024];
 static PCHAR pMessageHead = pMessageBuffer;
+static BOOL K22AppendError(LPCSTR lpMessage);
 
 static VOID K22OutputMessage() {
 	if (pMessageHead == pMessageBuffer)
@@ -162,10 +163,14 @@ VOID K22LogWrite(
 #endif
 	);
 
+	LPCSTR lpMessageOnly = pMessageHead;
 	va_list va_args;
 	va_start(va_args, lpFormat);
 	K22VPrintf(lpFormat, va_args);
 	va_end(va_args);
+
+	if (dwLevel == K22_LEVEL_FATAL)
+		K22AppendError(lpMessageOnly);
 
 	K22OutputMessage();
 
@@ -211,4 +216,58 @@ VOID K22LogWrite(
 	if (dwWin32Error != STATUS_BREAKPOINT) {
 		LocalFree(lpMessage);
 	}
+}
+
+typedef struct K22_ERROR {
+	LPSTR lpMessage;
+	DWORD cchMessage;
+	struct K22_ERROR *pNext;
+	struct K22_ERROR *pPrev;
+} K22_ERROR, *PK22_ERROR;
+
+static PK22_ERROR pErrors = NULL;
+
+static BOOL K22AppendError(LPCSTR lpMessage) {
+	PK22_ERROR pError;
+	pError = malloc(sizeof(*pError));
+	if (pError == NULL)
+		return FALSE;
+	memset(pError, 0, sizeof(*pError));
+	K22_LL_APPEND(pErrors, pError);
+	pError->cchMessage = strlen(lpMessage);
+	K22StringDup(lpMessage, pError->cchMessage, &pError->lpMessage);
+	return TRUE;
+}
+
+LPSTR K22LogGetErrors(LPCSTR lpPrefix) {
+	// count the total length of messages
+	DWORD cchPrefix = strlen(lpPrefix);
+	DWORD cchErrors = cchPrefix;
+	PK22_ERROR pError, pTmp;
+	K22_LL_FOREACH(pErrors, pError) {
+		cchErrors += pError->cchMessage + sizeof("\r\n") - 1;
+	}
+	// allocate a string
+	LPSTR lpErrors;
+	K22_MALLOC_LENGTH(lpErrors, cchErrors + 1);
+	// copy the prefix message
+	memcpy(lpErrors, lpPrefix, cchPrefix + 1);
+	// copy each message while deleting them
+	LPSTR lpWriteHead = lpErrors + cchPrefix;
+	K22_LL_FOREACH_SAFE(pErrors, pError) {
+		strcpy(lpWriteHead, pError->lpMessage);
+		lpWriteHead += pError->cchMessage;
+		strcpy(lpWriteHead, "\r\n");
+		lpWriteHead += sizeof("\r\n") - 1;
+		K22_LL_DELETE(pErrors, pError);
+		K22_FREE(pError->lpMessage);
+		K22_FREE(pError);
+	}
+	return lpErrors;
+}
+
+VOID K22LogShowErrorMessage(LPCSTR lpPrefix) {
+	LPSTR lpErrors = K22LogGetErrors(lpPrefix);
+	MessageBox(0, lpErrors, "Error", MB_ICONERROR);
+	free(lpErrors);
 }

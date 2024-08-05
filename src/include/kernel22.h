@@ -70,9 +70,9 @@ K22_CORE_PROC DWORD K22ConfigReadValueGlobal(LPCSTR lpName, PVOID pValue, DWORD 
 K22_CORE_PROC DWORD K22ConfigReadValue(LPCSTR lpName, PVOID pValue, DWORD cbValue);
 K22_CORE_PROC BOOL K22ConfigReadKey(LPCSTR lpName, BOOL (*pProc)(HKEY));
 // k22_data_utils.c
-K22_CORE_PROC BOOL K22StringDup(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
-K22_CORE_PROC BOOL K22StringDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
-K22_CORE_PROC BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR *ppSymbol);
+K22_CORE_PROC BOOL K22StringDup(LPCSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
+K22_CORE_PROC BOOL K22StringDupFileName(LPCSTR lpInput, DWORD cchInput, LPSTR *ppOutput);
+K22_CORE_PROC BOOL K22StringDupDllTarget(LPCSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR *ppSymbol);
 K22_CORE_PROC BOOL K22PathMatches(LPCSTR lpPath, LPCSTR lpPattern);
 K22_CORE_PROC BOOL K22PathIsFile(LPCSTR lpPath);
 K22_CORE_PROC BOOL K22PathIsFileEx(LPSTR lpDirectory, DWORD cchDirectory, LPCSTR lpName);

@@ -51,16 +51,16 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext) {
 	pK22Data->fDelayDllInit = TRUE;
 	// load any configured extra DLLs
 	if (!K22DllExtraLoadAll())
-		return FALSE;
+		goto Error;
 	// process static dependencies of the current process
 	if (!K22ProcessImports(pK22Data->lpProcessBase))
-		return FALSE;
+		goto Error;
 	// static dependencies are resolved, call init routines normally from now on
 	pK22Data->fDelayDllInit = FALSE;
 	// finally call all delayed init routines - also pass lpContext received from ntdll
 	// - some DLLs (e.g. msys-2.0.dll) use this to determine if they were linked statically or dynamically
 	if (!K22CallInitRoutines(lpContext))
-		return FALSE;
+		goto Error;
 
 	if (pK22Data->stConfig.dwDllNotificationMode == 1) {
 		K22_W("Unregistering DLL notification callback by registry setting");
@@ -71,6 +71,12 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext) {
 	K22_I("Kernel22 Core initialized, resuming process");
 
 	return TRUE;
+
+Error:
+	// unregister DLL notification if any initialization error occurs
+	if (LdrUnregisterDllNotification(pCookie) != ERROR_SUCCESS)
+		RETURN_K22_F_ERR("Couldn't unregister DLL notification");
+	return FALSE;
 }
 
 static BOOL K22CoreDllNotification(DWORD dwReason, PLDR_DLL_NOTIFICATION_DATA pData, PVOID pContext) {

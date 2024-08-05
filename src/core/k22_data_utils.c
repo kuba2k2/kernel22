@@ -2,7 +2,7 @@
 
 #include "kernel22.h"
 
-BOOL K22StringDup(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput) {
+BOOL K22StringDup(LPCSTR lpInput, DWORD cchInput, LPSTR *ppOutput) {
 	if (*ppOutput)
 		free(*ppOutput);
 	cchInput++; // count the NULL terminator
@@ -11,7 +11,7 @@ BOOL K22StringDup(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput) {
 	return TRUE;
 }
 
-BOOL K22StringDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput) {
+BOOL K22StringDupFileName(LPCSTR lpInput, DWORD cchInput, LPSTR *ppOutput) {
 	if (lpInput[0] != '@')
 		return K22StringDup(lpInput, cchInput, ppOutput);
 	lpInput++; // skip the @ character; cchInput now accounts for the NULL terminator
@@ -22,7 +22,7 @@ BOOL K22StringDupFileName(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput) {
 	return TRUE;
 }
 
-BOOL K22StringDupDllTarget(LPSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR *ppSymbol) {
+BOOL K22StringDupDllTarget(LPCSTR lpInput, DWORD cchInput, LPSTR *ppOutput, LPSTR *ppSymbol) {
 	LPSTR lpSymbol = strrchr(lpInput, '!');
 	if (lpSymbol) {
 		*lpSymbol++ = '\0'; // terminate the string before the symbol name, advance the pointer

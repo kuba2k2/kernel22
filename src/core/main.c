@@ -17,8 +17,7 @@ static BOOL DllInitialize(HANDLE hDll, LPVOID lpContext) {
 }
 
 static VOID DllError() {
-	// MessageBox(0, "Couldn't initialize K22 Core DLL", "Error", MB_ICONERROR);
-	K22_F("Couldn't initialize K22 Core DLL");
+	K22LogShowErrorMessage("Kernel22 Core initialization failed:\r\n\r\n");
 }
 
 #pragma warning(push)

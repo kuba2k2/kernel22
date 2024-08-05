@@ -28,6 +28,9 @@ K22_CORE_PROC VOID K22LogWrite(
 	...
 ); // __attribute__((format(printf, 6, 7)));
 
+K22_CORE_PROC LPSTR K22LogGetErrors(LPCSTR lpPrefix);
+K22_CORE_PROC VOID K22LogShowErrorMessage(LPCSTR lpPrefix);
+
 #if K22_LEVEL_TRACE >= K22_LOGLEVEL
 #define K22_T(...) K22_LOG(K22_LEVEL_TRACE, __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
 #else
