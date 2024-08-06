@@ -50,7 +50,7 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext) {
 	// don't call any initialization routines in ntdll
 	pK22Data->fDelayDllInit = TRUE;
 	// load any configured extra DLLs
-	if (!K22DllExtraLoadAll())
+	if (!K22LoadExtraDlls())
 		goto Error;
 	// process static dependencies of the current process
 	if (!K22ProcessImports(pK22Data->lpProcessBase))

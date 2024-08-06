@@ -2,6 +2,19 @@
 
 #include "kernel22.h"
 
+BOOL K22LoadExtraDlls() {
+	PK22_DLL_EXTRA pDllExtra = NULL;
+	K22_LL_FOREACH(pK22Data->stDll.pDllExtra, pDllExtra) {
+		if (pDllExtra->hModule != NULL)
+			continue;
+		K22_I("DLL Extra: loading %s (%s)", pDllExtra->lpKey, pDllExtra->lpTargetDll);
+		pDllExtra->hModule = LoadLibrary(pDllExtra->lpTargetDll);
+		if (pDllExtra->hModule == NULL)
+			RETURN_K22_F_ERR("Couldn't load extra DLL - %s", pDllExtra->lpTargetDll);
+	}
+	return TRUE;
+}
+
 BOOL K22ProcessImports(LPVOID lpImageBase) {
 	PK22_MODULE_DATA pK22ModuleData = K22DataGetModule(lpImageBase);
 
