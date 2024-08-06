@@ -12,6 +12,15 @@
 	extern ret(*CONCAT(Real, name)) args;                                                                              \
 	extern ret CONCAT(Hook, name) args
 
+#define K22_HOOK_REAL_DEF(ret, name, args) K22_CORE_PROC ret CONCAT(K22Real, name) args
+
+#define K22_HOOK_REAL_PROC(ret, name, args, callargs)                                                                  \
+	ret CONCAT(K22Real, name) args {                                                                                   \
+		if (CONCAT(Real, name))                                                                                        \
+			return CONCAT(Real, name) callargs;                                                                        \
+		return name callargs;                                                                                          \
+	}
+
 #define K22_HOOK_CREATE(name)                                                                                          \
 	do {                                                                                                               \
 		if (!K22HookCreate(name, CONCAT(Hook, name), (LPVOID)&CONCAT(Real, name)))                                     \

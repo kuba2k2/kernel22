@@ -59,7 +59,7 @@ BOOL K22ProcessImports(LPVOID lpImageBase) {
 				lpSymbolName = ((PIMAGE_IMPORT_BY_NAME)RVA(*pOrigThunk))->Name;
 			}
 
-			pProcAddress = K22Resolve(pK22ModuleData->lpModuleName, lpImportModuleName, lpSymbolName);
+			pProcAddress = K22ResolveSymbol(pK22ModuleData->lpModuleName, lpImportModuleName, lpSymbolName);
 			if (pProcAddress == NULL)
 				return FALSE;
 

@@ -15,7 +15,7 @@ PK22_DLL_API_SET K22FindDllApiSet(LPCSTR lpModuleName, LPCSTR lpSymbolName) {
 		// compare module name (api-ms-aaa-bbb-lX-Y-Z.dll) without X, Y, Z
 		if (_strnicmp(lpModuleName, pDllApiSet->lpSourceDll, cchModuleName - 9) == 0) {
 			// module name matches
-			if (pDllApiSet->lpSourceSymbol) {
+			if (pDllApiSet->lpSourceSymbol && lpSymbolName) {
 				// quickly return any entry matching the source symbol
 				if (_stricmp(pDllApiSet->lpSourceSymbol, lpSymbolName) == 0)
 					return pDllApiSet;

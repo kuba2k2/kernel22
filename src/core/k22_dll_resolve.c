@@ -80,7 +80,35 @@ LPCSTR K22ResolveModulePath(LPCSTR lpModuleName, HINSTANCE *ppModule) {
 	return NULL;
 }
 
-PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName) {
+HINSTANCE K22ResolveModule(LPCSTR lpCallerName, LPCSTR lpModuleName) {
+	LPCSTR lpModuleNameOrig = lpModuleName;
+	LPCSTR lpErrorName		= NULL;
+
+	HINSTANCE hModule	= NULL;
+	HINSTANCE *ppModule = &hModule;
+
+	PK22_DLL_API_SET pDllApiSet = K22FindDllApiSet(lpModuleName, NULL);
+	if (pDllApiSet != NULL) {
+		// apply DLL ApiSet redirect entry first
+		lpModuleName = pDllApiSet->lpTargetDll;
+		ppModule	 = &pDllApiSet->hModule; // cache module handle in redirect entry
+	}
+
+	PK22_DLL_REDIRECT pDllRedirect = K22FindDllRedirect(lpModuleName);
+	if (pDllRedirect != NULL) {
+		// then apply other DLL redirect entries
+		lpModuleName = pDllRedirect->lpTargetDll;
+		ppModule	 = &pDllRedirect->hModule; // cache module handle in redirect entry
+	}
+
+	if (K22LoadAndResolve(lpCallerName, lpModuleName, ppModule, NULL, NULL, lpModuleNameOrig, NULL, &lpErrorName))
+		return *ppModule;
+
+	K22_F_ERR("%s - %s -> %s -> %s", lpErrorName, lpCallerName, lpModuleNameOrig, lpModuleName);
+	return NULL;
+}
+
+PVOID K22ResolveSymbol(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName) {
 	LPCSTR lpModuleNameOrig = lpModuleName;
 	LPCSTR lpSymbolNameOrig = lpSymbolName;
 	LPCSTR lpErrorName		= NULL;
@@ -216,7 +244,7 @@ static PVOID K22LoadAndResolve(
 	LPCSTR lpSymbolNameOrig,
 	LPCSTR *ppErrorName
 ) {
-	if (*ppProc != NULL)
+	if (ppProc != NULL && *ppProc != NULL)
 		return *ppProc;
 
 	LPCSTR lpModulePath = lpModuleName;
@@ -230,9 +258,24 @@ static PVOID K22LoadAndResolve(
 	}
 	if (*ppModule == NULL) {
 		// otherwise load it by full path
-		*ppModule = LoadLibrary(lpModulePath);
-		if (*ppModule == NULL) {
+		ANSI_STRING stModuleNameAnsi = {
+			.Length		   = strlen(lpModuleName),
+			.MaximumLength = 0,
+			.Buffer		   = (LPSTR)lpModuleName,
+		};
+		UNICODE_STRING stModuleName;
+		if (!NT_SUCCESS(RtlAnsiStringToUnicodeString(&stModuleName, &stModuleNameAnsi, TRUE))) {
+			*ppErrorName = "String alloc failed";
+			return NULL;
+		}
+		NTSTATUS ntStatus = K22RealLdrLoadDll(NULL, 0, &stModuleName, (PVOID *)ppModule);
+		RtlFreeUnicodeString(&stModuleName);
+		if (!NT_SUCCESS(ntStatus)) {
 			*ppErrorName = "Module load failed";
+			return NULL;
+		}
+		if (*ppModule == NULL) {
+			*ppErrorName = "Module is NULL";
 			return NULL;
 		}
 		PK22_MODULE_DATA pK22ModuleData = K22DataGetModule(*ppModule);
@@ -243,17 +286,32 @@ static PVOID K22LoadAndResolve(
 	}
 
 	// module handle is already loaded
-	// find the procedure by ordinal or name
+	// return if no symbol to find
+	if (lpSymbolName == NULL)
+		return *ppModule;
+
+	// otherwise find the procedure by ordinal or name
 	if (lpSymbolName[0] == '#') {
 		ULONG_PTR ulOrdinal = strtol(lpSymbolName + 1, NULL, 10);
-		*ppProc				= GetProcAddress(*ppModule, (PVOID)ulOrdinal);
+		if (!NT_SUCCESS(K22RealLdrGetProcedureAddress(*ppModule, NULL, ulOrdinal, ppProc))) {
+			*ppErrorName = "Ordinal not found";
+			return NULL;
+		}
 	} else {
-		*ppProc = GetProcAddress(*ppModule, lpSymbolName);
+		ANSI_STRING stSymbolName = {
+			.Length		   = strlen(lpSymbolName),
+			.MaximumLength = 0,
+			.Buffer		   = (LPSTR)lpSymbolName,
+		};
+		if (!NT_SUCCESS(K22RealLdrGetProcedureAddress(*ppModule, &stSymbolName, 0, ppProc))) {
+			*ppErrorName = "Symbol not found";
+			return NULL;
+		}
 	}
 
 	PVOID pProc = *ppProc;
 	if (pProc == NULL) {
-		*ppErrorName = "Symbol not found";
+		*ppErrorName = "Procedure not found";
 		return NULL;
 	}
 

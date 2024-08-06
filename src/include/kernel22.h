@@ -76,6 +76,22 @@ K22_CORE_PROC BOOL K22StringDupDllTarget(LPCSTR lpInput, DWORD cchInput, LPSTR *
 K22_CORE_PROC BOOL K22PathMatches(LPCSTR lpPath, LPCSTR lpPattern);
 K22_CORE_PROC BOOL K22PathIsFile(LPCSTR lpPath);
 K22_CORE_PROC BOOL K22PathIsFileEx(LPSTR lpDirectory, DWORD cchDirectory, LPCSTR lpName);
+// k22_dll_ldrapi.c
+K22_HOOK_REAL_DEF(
+	NTSTATUS,
+	LdrLoadDll,
+	(PCWSTR pDllPath, PULONG pDllCharacteristics, PUNICODE_STRING pDllName, PVOID *ppDllHandle)
+);
+K22_HOOK_REAL_DEF(
+	NTSTATUS,
+	LdrGetDllHandleEx,
+	(ULONG ulFlags, PCWSTR pDllPath, PULONG pDllCharacteristics, PUNICODE_STRING pDllName, PVOID *ppDllHandle)
+);
+K22_HOOK_REAL_DEF(
+	NTSTATUS,
+	LdrGetProcedureAddress,
+	(PVOID pDllHandle, PANSI_STRING pProcedureName, ULONG ulProcedureNumber, PVOID *ppProcedureAddress)
+);
 // k22_hexdump.c
 K22_CORE_PROC VOID K22HexDump(CONST BYTE *pBuf, SIZE_T cbLength, ULONGLONG ullOffset);
 K22_CORE_PROC VOID K22HexDumpProcess(HANDLE hProcess, LPCVOID lpAddress, SIZE_T cbLength);
@@ -111,7 +127,11 @@ BOOL K22ProcessImports(LPVOID lpImageBase);
 VOID K22DisableInitRoutine(LPVOID lpImageBase);
 BOOL K22CallInitRoutines(LPVOID lpContext);
 BOOL K22DummyEntryPoint(HANDLE hDll, DWORD dwReason, LPVOID lpContext);
+// k22_dll_ldrapi.c
+BOOL K22LdrApiHookCreate();
+BOOL K22LdrApiHookRemove();
 // k22_dll_resolve.c
 LPCSTR K22ResolveModulePath(LPCSTR lpModuleName, HINSTANCE *ppModule);
-PVOID K22Resolve(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName);
+HINSTANCE K22ResolveModule(LPCSTR lpCallerName, LPCSTR lpModuleName);
+PVOID K22ResolveSymbol(LPCSTR lpCallerName, LPCSTR lpModuleName, LPCSTR lpSymbolName);
 #endif

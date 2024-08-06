@@ -47,6 +47,10 @@ BOOL K22CoreMain(PIMAGE_K22_HEADER pK22Header, LPVOID lpContext) {
 			RETURN_K22_F_ERR("Couldn't register DLL notification");
 	}
 
+	// hook Library Loader functions (ntdll)
+	if (!K22LdrApiHookCreate())
+		goto Error;
+
 	// don't call any initialization routines in ntdll
 	pK22Data->fDelayDllInit = TRUE;
 	// load any configured extra DLLs
@@ -76,6 +80,7 @@ Error:
 	// unregister DLL notification if any initialization error occurs
 	if (LdrUnregisterDllNotification(pCookie) != ERROR_SUCCESS)
 		RETURN_K22_F_ERR("Couldn't unregister DLL notification");
+	K22LdrApiHookRemove();
 	return FALSE;
 }
 
