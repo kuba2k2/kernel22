@@ -23,18 +23,31 @@ static RTL_VERIFIER_DLL_DESCRIPTOR stDll[] = {
 };
 
 static RTL_VERIFIER_PROVIDER_DESCRIPTOR stProvider = {
-	sizeof(RTL_VERIFIER_PROVIDER_DESCRIPTOR),
-	stDll,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	0,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
+	sizeof(RTL_VERIFIER_PROVIDER_DESCRIPTOR), // Length
+	stDll,									  // ProviderDlls
+	NULL,									  // ProviderDllLoadCallback
+	NULL,									  // ProviderDllUnloadCallback
+	NULL,									  // VerifierImage
+	0,										  // VerifierFlags
+	0,										  // VerifierDebug
+	NULL,									  // RtlpGetStackTraceAddress
+	NULL,									  // RtlpDebugPageHeapCreate
+	NULL,									  // RtlpDebugPageHeapDestroy
+	NULL,									  // ProviderNtdllHeapFreeCallback
 };
+
+#if K22_BITS64
+ULONG_PTR GetRBP() {
+	// mov rax, rbp
+	// ret
+	ULONG_PTR pCode = 0x80000000C3E88948;
+	PBYTE pFunc		= (PVOID)GetRBP;
+	while (*(PULONG_PTR)(++pFunc) != pCode) {}
+	return ((ULONG_PTR(*)())pFunc)();
+}
+#else
+#error "Unimplemented platform code"
+#endif
 
 BOOL APIENTRY DllMain(HANDLE hDll, DWORD dwReason, PRTL_VERIFIER_PROVIDER_DESCRIPTOR *ppProvider) {
 	// ignore any other events
@@ -42,6 +55,19 @@ BOOL APIENTRY DllMain(HANDLE hDll, DWORD dwReason, PRTL_VERIFIER_PROVIDER_DESCRI
 		return TRUE;
 	}
 	K22_I("Verifier entry point called with dwReason=%lu, ppProvider=%p", dwReason, ppProvider);
+
+	// try disabling Application Verifier
+	// fetch AVrfpVerifierProvidersList address from RBP
+	PVOID *pProvidersList = (PVOID)GetRBP();
+	// set it to its own address, effectively clearing the list
+	*pProvidersList = pProvidersList;
+	// clear NtGlobalFlag bits
+	// ~(FLG_APPLICATION_VERIFIER | FLG_HEAP_PAGE_ALLOCS | FLG_DISABLE_STACK_EXTENSION)
+	NtCurrentPeb()->NtGlobalFlag &= ~(0x100 | 0x02000000 | 0x10000);
+	// disable handle verifier
+	if (!NT_SUCCESS(NtSetInformationProcess(NtCurrentProcess, ProcessHandleTracing, NULL, 0)))
+		RETURN_K22_F_ERR("Couldn't disable ProcessHandleTracing");
+
 	// set the verifier provider descriptor
 	if (ppProvider)
 		*ppProvider = &stProvider;
