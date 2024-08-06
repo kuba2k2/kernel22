@@ -171,7 +171,7 @@ VOID K22LogWrite(
 	va_start(va_args, lpFormat);
 	K22VPrintf(lpFormat, va_args);
 	va_end(va_args);
-	if (dwLevel == K22_LEVEL_FATAL)
+	if (dwLevel >= K22_LEVEL_ERROR)
 		K22AppendError(lpMessageOnly);
 	K22OutputMessage();
 
@@ -213,7 +213,7 @@ VOID K22LogWrite(
 
 	lpMessageOnly = pMessageHead;
 	K22Printf("%*c====> CODE: %s (0x%08lx)", cbMessagePrefix, ' ', lpMessage, dwWin32Error);
-	if (dwLevel == K22_LEVEL_FATAL)
+	if (dwLevel >= K22_LEVEL_ERROR)
 		K22AppendError(lpMessageOnly);
 	K22OutputMessage();
 

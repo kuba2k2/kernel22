@@ -100,6 +100,11 @@ BOOL K22ConfigParseDllExtra(HKEY hDllExtra);
 BOOL K22ConfigParseDllApiSet(HKEY hDllApiSet);
 BOOL K22ConfigParseDllRedirect(HKEY hDllRedirect);
 BOOL K22ConfigParseDllRewrite(HKEY hDllRewrite);
+// k22_dll_entry_find.c
+PK22_DLL_API_SET K22FindDllApiSet(LPCSTR lpModuleName, LPCSTR lpSymbolName);
+PK22_DLL_REDIRECT K22FindDllRedirect(LPCSTR lpModuleName);
+PK22_DLL_REWRITE K22FindDllRewrite(LPCSTR lpModuleName);
+PK22_DLL_REWRITE_SYMBOL K22FindDllRewriteSymbol(PK22_DLL_REWRITE pDllRewrite, LPCSTR lpSymbolName);
 // k22_dll_extra.c
 BOOL K22DllExtraLoadAll();
 // k22_dll_import.c
